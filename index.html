@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CabrioRide Dashboard</title>
+    <meta name="description" content="Веб-дашборд для участников клуба кабриолетов CabrioRide">
+    <meta name="theme-color" content="#0a0a0a">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="css/style.css?v=1.2" as="style">
+    <link rel="preload" href="js/data.js" as="script">
+    <link rel="preload" href="js/app.js" as="script">
+    
+    <link rel="stylesheet" href="css/style.css?v=1.2">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    
+    <!-- Telegram Login Widget -->
+    <script async src="https://telegram.org/js/telegram-widget.js?22"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-container">
+                <img src="logo.png" alt="CabrioRide" class="logo">
+            </div>
+            <h1>CabrioRide</h1>
+            <div class="spinner"></div>
+            <p>Загрузка...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen hidden">
+        <!-- Большой логотип на фоне -->
+        <div class="background-logo">
+            <img src="logo.png" alt="CabrioRide" class="background-logo-img">
+        </div>
+        
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo-large">
+                    <img src="logo.png" alt="CabrioRide" class="logo-img">
+                </div>
+                <h1>CabrioRide</h1>
+                <p>Веб-дашборд для участников клуба</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-content">
+                        <h3>Участники клуба</h3>
+                        <p>Просмотр всех участников и их автомобилей</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚗</div>
+                    <div class="feature-content">
+                        <h3>Каталог автомобилей</h3>
+                        <p>Полный каталог кабриолетов участников</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎉</div>
+                    <div class="feature-content">
+                        <h3>События и сервисы</h3>
+                        <p>Мероприятия клуба и рекомендации сервисов</p>
+                    </div>
+                </div>
+                <div class="feature-card feature-card-check-number" id="btn-check-number" style="cursor: pointer;">
+                    <div class="feature-icon">🔍</div>
+                    <div class="feature-content">
+                        <h3>Проверить номер</h3>
+                        <p>Поиск автомобиля по номеру в базе клуба</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-buttons">
+                <!-- Telegram Login Widget -->
+                <script async src="https://telegram.org/js/telegram-widget.js?22" 
+                        data-telegram-login="Cabrio_Ride_bot" 
+                        data-size="large" 
+                        data-onauth="onTelegramAuth(user)"
+                        data-request-access="write">
+                </script>
+                <p class="login-note">Доступ только для активных участников клуба кабриолетов</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно проверки номера -->
+    <div id="check-number-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>Проверка номера автомобиля</h3>
+                <button class="modal-close" onclick="app.closeModal('check-number-modal')">✕</button>
+            </div>
+            <form id="check-number-form" class="modal-form">
+                <div class="form-group">
+                    <label for="car-number-input">Введите часть номера (латиница и цифры, минимум 3 символа)</label>
+                    <input type="text" id="car-number-input" name="car_number" pattern="[A-Za-z0-9]{3,}" minlength="3" maxlength="12" required autocomplete="off" placeholder="Например: 70MX">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('check-number-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary" id="btn-submit-check-number" disabled>Проверить</button>
+                </div>
+                <div id="check-number-result" style="margin-top:10px;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="app-title">CabrioRide</h1>
+                    <button class="search-btn" id="header-search-btn" title="Проверить номер автомобиля">
+                        <span>🔍</span>
+                    </button>
+                </div>
+                <div class="header-center">
+                    <div class="header-logo">
+                        <img src="logo.png" alt="CabrioRide" class="header-logo-img">
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar" id="user-avatar"></div>
+                        <div class="user-details">
+                            <div class="user-name" id="user-name"></div>
+                            <div class="user-nickname" id="user-nickname"></div>
+                        </div>
+                        <button class="unlink-btn" id="unlink-btn" title="Отвязать аккаунт">
+                            <span>🔗</span>
+                        </button>
+                        <button class="logout-btn" id="logout-btn" title="Выйти">
+                            <span>🚪</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="stats">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Статистика</span>
+                </button>
+                <button class="nav-btn" data-tab="members">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-label">Участники</span>
+                </button>
+                <button class="nav-btn" data-tab="cars">
+                    <span class="nav-icon">🚗</span>
+                    <span class="nav-label">Автомобили</span>
+                </button>
+                <button class="nav-btn" data-tab="invitations">
+                    <span class="nav-icon">📨</span>
+                    <span class="nav-label">Приглашения</span>
+                </button>
+                <button class="nav-btn" data-tab="events">
+                    <span class="nav-icon">🎉</span>
+                    <span class="nav-label">События</span>
+                </button>
+                <button class="nav-btn" data-tab="services">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-label">Сервисы</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Stats Tab -->
+            <div id="stats-tab" class="tab-content active">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Статистика клуба</h2>
+                        <p>Общая информация о участниках и активности клуба кабриолетов CabrioRide</p>
+                    </div>
+
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- Stats cards will be inserted here -->
+                    </div>
+
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <h3>О клубе CabrioRide</h3>
+                            <div class="info-content">
+                                <p>🏁 CabrioRide - сообщество автовладельцев открытых автомобилей</p>
+                                <p>🌟 Участники из разных городов России объединены страстью к драйву</p>
+                                <p>🚗 В клубе представлены различные марки: BMW, Mercedes-Benz, Audi и другие</p>
+                                <p>🤝 Регулярные встречи, поездки и мероприятия для участников</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h3>Активность</h3>
+                            <div class="info-content">
+                                <div class="progress-item">
+                                    <span>Активность участников</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="activity-progress"></div>
+                                    </div>
+                                    <span class="progress-value" id="activity-value">0%</span>
+                                </div>
+                                <div class="progress-item">
+                                    <span>Успешность приглашений</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="invitations-progress"></div>
+                                    </div>
+                                    <span class="progress-value" id="invitations-value">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Tab -->
+            <div id="members-tab" class="tab-content">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Участники клуба</h2>
+                        <p id="members-count">Загрузка...</p>
+                    </div>
+
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <div class="filter-actions">
+                                <button class="btn-profile" id="btn-profile" title="Мой профиль">
+                                    <span>👤</span>
+                                    <span>Мой профиль</span>
+                                </button>
+                            </div>
+                            <div class="filter-toggle">
+                                <button class="clear-filters-btn" id="clear-members-filters">🗑️</button>
+                                <span>Фильтры</span>
+                                <span class="filter-toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="filter-content">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Имя / Никнейм</label>
+                                    <input type="text" id="member-name-filter" placeholder="Поиск по имени или никнейму...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Город</label>
+                                    <select id="member-city-filter">
+                                        <option value="">Все города</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Статус</label>
+                                    <select id="member-status-filter">
+                                        <option value="">Все статусы</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" id="members-grid">
+                        <!-- Members will be inserted here -->
+                    </div>
+
+                    <div class="empty-state hidden" id="members-empty">
+                        <div class="empty-icon">👥</div>
+                        <h3>Участники не найдены</h3>
+                        <p>Попробуйте изменить фильтры поиска</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cars Tab -->
+            <div id="cars-tab" class="tab-content">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Каталог автомобилей</h2>
+                        <p id="cars-count">Загрузка...</p>
+                    </div>
+
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <div class="filter-actions">
+                                <button class="btn-add" id="btn-add-car" title="Добавить автомобиль">
+                                    <span>🚗</span>
+                                    <span>Добавить автомобиль</span>
+                                </button>
+                            </div>
+                            <div class="filter-toggle">
+                                <button class="clear-filters-btn" id="clear-cars-filters">🗑️</button>
+                                <span>Фильтры</span>
+                                <span class="filter-toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="filter-content">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Марка / Модель</label>
+                                    <input type="text" id="car-brand-filter" placeholder="BMW, Mercedes...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Номер</label>
+                                    <input type="text" id="car-number-filter" placeholder="М123АВ777...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Владелец</label>
+                                    <input type="text" id="car-owner-filter" placeholder="Имя владельца...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Год</label>
+                                    <input type="text" id="car-year-filter" placeholder="2019...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" id="cars-grid">
+                        <!-- Cars will be inserted here -->
+                    </div>
+
+                    <div class="empty-state hidden" id="cars-empty">
+                        <div class="empty-icon">🚗</div>
+                        <h3>Автомобили не найдены</h3>
+                        <p>Попробуйте изменить фильтры поиска</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invitations Tab -->
+            <div id="invitations-tab" class="tab-content">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Система приглашений</h2>
+                        <p id="invitations-count">Загрузка...</p>
+                    </div>
+
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <div class="filter-actions">
+                                <button class="btn-add" id="btn-add-invitation" title="Добавить приглашение">
+                                    <span>📨</span>
+                                    <span>Добавить приглашение</span>
+                                </button>
+                            </div>
+                            <div class="filter-toggle">
+                                <button class="clear-filters-btn" id="clear-invitations-filters">🗑️</button>
+                                <span>Фильтры</span>
+                                <span class="filter-toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="filter-content">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Номер авто</label>
+                                    <input type="text" id="invitation-number-filter" placeholder="М123АВ777...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>От кого</label>
+                                    <input type="text" id="invitation-inviter-filter" placeholder="Имя пригласившего...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Марка авто</label>
+                                    <select id="invitation-brand-filter">
+                                        <option value="">Все марки</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Статус</label>
+                                    <select id="invitation-status-filter">
+                                        <option value="">Все статусы</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" id="invitations-grid">
+                        <!-- Invitations will be inserted here -->
+                    </div>
+
+                    <div class="empty-state hidden" id="invitations-empty">
+                        <div class="empty-icon">📨</div>
+                        <h3>Приглашения не найдены</h3>
+                        <p>Попробуйте изменить фильтры поиска</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events Tab -->
+            <div id="events-tab" class="tab-content">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>События клуба</h2>
+                        <p id="events-count">Загрузка...</p>
+                    </div>
+
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <div class="filter-actions">
+                                <button class="btn-add" id="btn-add-event" title="Добавить событие">
+                                    <span>🎉</span>
+                                    <span>Добавить событие</span>
+                                </button>
+                            </div>
+                            <div class="filter-toggle">
+                                <button class="clear-filters-btn" id="clear-events-filters">🗑️</button>
+                                <span>Фильтры</span>
+                                <span class="filter-toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="filter-content">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Название</label>
+                                    <input type="text" id="event-title-filter" placeholder="Поиск по названию...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Город</label>
+                                    <select id="event-city-filter">
+                                        <option value="">Все города</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Тип события</label>
+                                    <select id="event-type-filter">
+                                        <option value="">Все типы</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Статус</label>
+                                    <select id="event-status-filter">
+                                        <option value="">Все статусы</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" id="events-grid">
+                        <!-- Events will be inserted here -->
+                    </div>
+
+                    <div class="empty-state hidden" id="events-empty">
+                        <div class="empty-icon">🎉</div>
+                        <h3>События не найдены</h3>
+                        <p>Попробуйте изменить фильтры поиска</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Tab -->
+            <div id="services-tab" class="tab-content">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Каталог сервисов</h2>
+                        <p id="services-count">Загрузка...</p>
+                    </div>
+
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <div class="filter-actions">
+                                <button class="btn-add" id="btn-add-service" title="Добавить сервис">
+                                    <span>🔧</span>
+                                    <span>Добавить сервис</span>
+                                </button>
+                            </div>
+                            <div class="filter-toggle">
+                                <button class="clear-filters-btn" id="clear-services-filters">🗑️</button>
+                                <span>Фильтры</span>
+                                <span class="filter-toggle-icon">▼</span>
+                            </div>
+                        </div>
+                        <div class="filter-content">
+                            <div class="filter-grid">
+                                <div class="filter-group">
+                                    <label>Название</label>
+                                    <input type="text" id="service-name-filter" placeholder="Поиск по названию...">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Город</label>
+                                    <select id="service-city-filter">
+                                        <option value="">Все города</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Тип услуг</label>
+                                    <select id="service-type-filter">
+                                        <option value="">Все типы</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Рекомендация</label>
+                                    <select id="service-recommendation-filter">
+                                        <option value="">Все</option>
+                                        <option value="рекомендуется">Рекомендуется</option>
+                                        <option value="не рекомендуется">Не рекомендуется</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-grid" id="services-grid">
+                        <!-- Services will be inserted here -->
+                    </div>
+
+                    <div class="empty-state hidden" id="services-empty">
+                        <div class="empty-icon">🔧</div>
+                        <h3>Сервисы не найдены</h3>
+                        <p>Попробуйте изменить фильтры поиска</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Photo Modal -->
+    <div id="photo-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">✕</button>
+            <img id="modal-image" src="" alt="">
+            <div class="modal-nav">
+                <button id="modal-prev">‹</button>
+                <button id="modal-next">›</button>
+            </div>
+            <div class="modal-counter">
+                <span id="modal-current">1</span> / <span id="modal-total">1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Car Modal -->
+    <div id="add-car-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>🚗 Добавить автомобиль</h3>
+                <button class="modal-close">✕</button>
+            </div>
+            <form id="add-car-form" class="modal-form">
+                <div class="form-group">
+                    <label for="car-brand">Марка *</label>
+                    <input type="text" id="car-brand" name="brand" required placeholder="BMW, Mercedes-Benz...">
+                </div>
+                <div class="form-group">
+                    <label for="car-model">Модель *</label>
+                    <input type="text" id="car-model" name="model" required placeholder="Z4, SLK...">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="car-year">Год выпуска *</label>
+                        <input type="number" id="car-year" name="year" required min="1990" max="2024" placeholder="2020">
+                    </div>
+                    <div class="form-group">
+                        <label for="car-color">Цвет</label>
+                        <input type="text" id="car-color" name="color" placeholder="Черный, белый...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="car-number">Гос. номер *</label>
+                    <input type="text" id="car-number" name="reg_number" required placeholder="М123АВ777">
+                </div>
+                <div class="form-group">
+                    <label for="car-engine">Объем двигателя</label>
+                    <input type="text" id="car-engine" name="engine_volume" placeholder="2.0, 3.0...">
+                </div>
+                <div class="form-group">
+                    <label for="car-photos">Фотографии</label>
+                    <input type="file" id="car-photos" name="photos" multiple accept="image/*">
+                    <div class="file-preview" id="car-photos-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('add-car-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить автомобиль</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Invitation Modal -->
+    <div id="add-invitation-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>📨 Добавить приглашение</h3>
+                <button class="modal-close">✕</button>
+            </div>
+            <form id="add-invitation-form" class="modal-form">
+                <div class="form-group">
+                    <label for="invitation-number">Номер автомобиля *</label>
+                    <input type="text" id="invitation-number" name="car_number" required placeholder="М123АВ777">
+                </div>
+                <div class="form-group">
+                    <label for="invitation-brand">Марка автомобиля</label>
+                    <input type="text" id="invitation-brand" name="car_brand" placeholder="BMW, Mercedes...">
+                </div>
+                <div class="form-group">
+                    <label for="invitation-location">Место встречи</label>
+                    <input type="text" id="invitation-location" name="location" placeholder="Адрес или описание места">
+                </div>
+                <div class="form-group">
+                    <label for="invitation-date">Дата встречи</label>
+                    <input type="datetime-local" id="invitation-date" name="meeting_date">
+                </div>
+                <div class="form-group">
+                    <label for="invitation-photos">Фотографии</label>
+                    <input type="file" id="invitation-photos" name="photos" multiple accept="image/*">
+                    <div class="file-preview" id="invitation-photos-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('add-invitation-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить приглашение</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="add-event-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>🎉 Добавить событие</h3>
+                <button class="modal-close">✕</button>
+            </div>
+            <form id="add-event-form" class="modal-form">
+                <div class="form-group">
+                    <label for="event-title">Название события *</label>
+                    <input type="text" id="event-title" name="title" required placeholder="Заезд, встреча, фотосессия...">
+                </div>
+                <div class="form-group">
+                    <label for="event-type">Тип события *</label>
+                    <select id="event-type" name="type" required>
+                        <option value="">Выберите тип</option>
+                        <option value="заезд">Заезд</option>
+                        <option value="встреча">Встреча</option>
+                        <option value="фотосессия">Фотосессия</option>
+                        <option value="поездка">Поездка</option>
+                        <option value="банкет">Банкет</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="event-date">Дата события *</label>
+                        <input type="date" id="event-date" name="event_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-time">Время</label>
+                        <input type="time" id="event-time" name="event_time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="event-location">Место проведения *</label>
+                    <input type="text" id="event-location" name="location" required placeholder="Адрес или описание места">
+                </div>
+                <div class="form-group">
+                    <label for="event-price">Стоимость участия</label>
+                    <input type="number" id="event-price" name="price" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="event-photos">Фотографии</label>
+                    <input type="file" id="event-photos" name="photos" multiple accept="image/*">
+                    <div class="file-preview" id="event-photos-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('add-event-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить событие</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div id="add-service-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>🔧 Добавить сервис</h3>
+                <button class="modal-close">✕</button>
+            </div>
+            <form id="add-service-form" class="modal-form">
+                <div class="form-group">
+                    <label for="service-name">Название сервиса *</label>
+                    <input type="text" id="service-name" name="name" required placeholder="Название автосервиса">
+                </div>
+                <div class="form-group">
+                    <label for="service-type">Тип услуг *</label>
+                    <select id="service-type" name="type" required>
+                        <option value="">Выберите тип</option>
+                        <option value="автосервис">Автосервис</option>
+                        <option value="детейлинг">Детейлинг</option>
+                        <option value="шиномонтаж">Шиномонтаж</option>
+                        <option value="электрик">Электрик</option>
+                        <option value="автомойка">Автомойка</option>
+                        <option value="тюнинг">Тюнинг</option>
+                        <option value="страхование">Страхование</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service-address">Адрес *</label>
+                    <input type="text" id="service-address" name="address" required placeholder="Полный адрес сервиса">
+                </div>
+                <div class="form-group">
+                    <label for="service-phone">Телефон</label>
+                    <input type="tel" id="service-phone" name="phone" placeholder="+7 (999) 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label for="service-rating">Рейтинг</label>
+                    <select id="service-rating" name="rating">
+                        <option value="">Выберите рейтинг</option>
+                        <option value="5">⭐⭐⭐⭐⭐ Отлично</option>
+                        <option value="4">⭐⭐⭐⭐ Хорошо</option>
+                        <option value="3">⭐⭐⭐ Удовлетворительно</option>
+                        <option value="2">⭐⭐ Плохо</option>
+                        <option value="1">⭐ Очень плохо</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service-recommendation">Рекомендация клуба</label>
+                    <select id="service-recommendation" name="recommendation">
+                        <option value="">Без рекомендации</option>
+                        <option value="рекомендуется">Рекомендуется</option>
+                        <option value="не рекомендуется">Не рекомендуется</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service-photos">Фотографии</label>
+                    <input type="file" id="service-photos" name="photos" multiple accept="image/*">
+                    <div class="file-preview" id="service-photos-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('add-service-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary">Добавить сервис</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal">
+            <div class="modal-header">
+                <h3>👤 Мой профиль</h3>
+                <button class="modal-close">✕</button>
+            </div>
+            <form id="profile-form" class="modal-form">
+                <div class="form-group">
+                    <label for="profile-first-name">Имя *</label>
+                    <input type="text" id="profile-first-name" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-last-name">Фамилия</label>
+                    <input type="text" id="profile-last-name" name="last_name">
+                </div>
+                <div class="form-group">
+                    <label for="profile-username">Никнейм</label>
+                    <input type="text" id="profile-username" name="username" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="profile-city">Город</label>
+                    <input type="text" id="profile-city" name="city" placeholder="Москва, Санкт-Петербург...">
+                </div>
+                <div class="form-group">
+                    <label for="profile-phone">Телефон</label>
+                    <input type="tel" id="profile-phone" name="phone" placeholder="+7 (999) 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label for="profile-birth-date">Дата рождения</label>
+                    <input type="date" id="profile-birth-date" name="birth_date">
+                </div>
+                <div class="form-group">
+                    <label for="profile-photo">Фотография профиля</label>
+                    <input type="file" id="profile-photo" name="photo" accept="image/*">
+                    <div class="file-preview" id="profile-photo-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.closeModal('profile-modal')">Отмена</button>
+                    <button type="submit" class="btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/real-api.js"></script>
+    
+    <!-- Telegram Auth Function - MUST be defined before app.js -->
+    <script>
+        // Глобальная функция для Telegram Widget - определяем сразу
+        window.onTelegramAuth = function(user) {
+            console.log('Telegram Widget auth callback received:', user);
+            
+            // Функция для попытки авторизации
+            function attemptAuth(retryCount = 0) {
+                if (window.app && window.app.handleTelegramAuth && typeof window.app.handleTelegramAuth === 'function') {
+                    console.log('App ready, processing auth...');
+                    window.app.handleTelegramAuth(user);
+                    return true;
+                } else if (retryCount < 10) {
+                    console.log(`App not ready (attempt ${retryCount + 1}/10), retrying in 500ms...`);
+                    setTimeout(() => attemptAuth(retryCount + 1), 500);
+                    return false;
+                } else {
+                    console.error('App failed to initialize after 10 attempts');
+                    alert('Ошибка инициализации приложения. Попробуйте обновить страницу.');
+                    return false;
+                }
+            }
+            
+            attemptAuth();
+        };
+    </script>
+    
+    <script src="js/app.js"></script>
+    
+    <!-- Initialize Application -->
+    <script>
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing CabrioRide app...');
+            try {
+                window.app = new CabrioRideApp();
+                console.log('CabrioRide app initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize CabrioRide app:', error);
+                alert('Ошибка инициализации приложения: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Минимальная версия .htaccess для тестирования
+# Только базовые настройки
+
+# Включаем rewrite engine
+RewriteEngine On
+
+# Базовые заголовки безопасности
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options SAMEORIGIN
+</IfModule>
+
+# Запрещаем доступ к служебным файлам
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Отключаем просмотр директорий
+Options -Indexes
+
+# Базовые настройки PHP (если поддерживается)
+<IfModule mod_php7.c>
+    php_flag display_errors On
+    php_flag log_errors On
+    php_value memory_limit 128M
+</IfModule>
+
+# Кодировка UTF-8
+AddDefaultCharset UTF-8 
