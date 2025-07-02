@@ -1,7 +1,7 @@
 <?php
 /**
- * Cabrio Club Dashboard - Database Configuration
- * Contains database connection settings and API configuration
+ * Cabrio Club Dashboard - Database Configuration Example
+ * Copy this file to config.php and fill in your actual values
  */
 
 // Prevent direct access
@@ -11,17 +11,16 @@ if (!defined('API_ACCESS')) {
 }
 
 // Database Configuration
-// define('DB_HOST', 'localhost');
-define('DB_HOST', 'mysql80.hostland.ru');
-define('DB_USER', 'host1708875_cabrio');
-define('DB_PASSWORD', 'Protokol911');
-define('DB_NAME', 'host1708875_cabrio');
+define('DB_HOST', 'your_database_host');        // e.g., 'localhost' or 'mysql.example.com'
+define('DB_USER', 'your_database_username');    // e.g., 'cabrio_user'
+define('DB_PASSWORD', 'your_database_password'); // e.g., 'your_secure_password'
+define('DB_NAME', 'your_database_name');        // e.g., 'cabrio_club'
 
 // Telegram Bot Configuration
-define('BOT_TOKEN', '7977510391:AAGgnVVDu_YPHCo7gQTOUnvExfk3surVLl0');
-define('BOT_NAME', 'Cabrio_Ride_bot');
-define('CHAT_ID', '-1002873258290');
-define('ADMIN_IDS', '287536885'); 
+define('BOT_TOKEN', 'your_bot_token');          // e.g., '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz'
+define('BOT_NAME', 'your_bot_name');            // e.g., 'Cabrio_Ride_bot'
+define('CHAT_ID', 'your_chat_id');              // e.g., '-1001234567890'
+define('ADMIN_IDS', 'admin_telegram_id');       // e.g., '123456789'
 
 // URL Paths for Photos
 define('PHOTOS_MEMBERS_URL', 'uploads/members/');
@@ -153,4 +152,4 @@ function sendSuccess($data = null, $message = null) {
     if ($message !== null) $response['message'] = $message;
     sendJsonResponse($response);
 }
-?>
+?> 
