@@ -2952,27 +2952,6 @@ select:focus-visible {
     padding: 1rem;
 }
 
-.car-main {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.car-main strong {
-    font-size: 1.1rem;
-    color: var(--text-primary);
-}
-
-.car-year {
-    background: var(--primary-blue);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
 .car-details {
     display: flex;
     align-items: center;
@@ -2988,47 +2967,6 @@ select:focus-visible {
     font-weight: 700;
     font-size: 0.9rem;
     letter-spacing: 0.5px;
-}
-
-.car-color {
-    background: var(--bg-darker);
-    color: var(--text-secondary);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    border: 1px solid var(--border-color);
-}
-
-.member-info, .invitation-info {
-    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-darker) 100%);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 1rem;
-}
-
-.member-name, .inviter-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.member-name strong, .inviter-info strong {
-    color: var(--text-primary);
-}
-
-.member-username, .inviter-username {
-    color: var(--primary-blue);
-    font-size: 0.9rem;
-}
-
-.member-status, .invitation-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
 }
 
 .status-badge {
@@ -3079,13 +3017,7 @@ select:focus-visible {
 .status-badge.status-вступил-в-клуб {
     background: rgba(0, 255, 136, 0.2);
     color: var(--primary-green);
-    color: var(--primary-green);
     border: 1px solid rgba(0, 255, 136, 0.3);
-}
-
-.member-city, .invitation-date {
-    color: var(--text-muted);
-    font-size: 0.9rem;
 }
 
 /* Адаптивность для мобильных */
@@ -3094,30 +3026,14 @@ select:focus-visible {
         gap: 0.75rem;
     }
     
-    .car-info, .member-info, .invitation-info {
+    .car-info {
         padding: 0.75rem;
-    }
-    
-    .car-main {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
     }
     
     .car-details {
         gap: 0.5rem;
-    }
-    
-    .member-name, .inviter-info {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.25rem;
-    }
-    
-    .member-status, .invitation-status {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
     }
     
     .status-badge {

@@ -1259,42 +1259,16 @@ function handleCheckCarNumberRequest() {
             $result['found'] = true;
             $result['type'] = 'member';
             $result['data'] = [
-                'car' => [
-                    'id' => $memberCar['car_id'],
-                    'brand' => $memberCar['brand'],
-                    'model' => $memberCar['model'],
-                    'year' => $memberCar['year'],
-                    'reg_number' => $memberCar['reg_number'],
-                    'color' => $memberCar['color']
-                ],
-                'member' => [
-                    'id' => $memberCar['member_id'],
-                    'first_name' => $memberCar['first_name'],
-                    'last_name' => $memberCar['last_name'],
-                    'username' => $memberCar['username'],
-                    'status' => $memberCar['member_status'],
-                    'city' => $memberCar['city']
-                ]
+                'reg_number' => $memberCar['reg_number'],
+                'status' => $memberCar['member_status']
             ];
             $result['message'] = '✅ Найдена машина участника клуба';
         } elseif ($invitation) {
             $result['found'] = true;
             $result['type'] = 'invitation';
             $result['data'] = [
-                'invitation' => [
-                    'id' => $invitation['invitation_id'],
-                    'brand' => $invitation['brand'],
-                    'model' => $invitation['model'],
-                    'year' => $invitation['year'],
-                    'car_number' => $invitation['car_number'],
-                    'status' => $invitation['invitation_status'],
-                    'created_at' => $invitation['created_at']
-                ],
-                'inviter' => [
-                    'first_name' => $invitation['inviter_first_name'],
-                    'last_name' => $invitation['inviter_last_name'],
-                    'username' => $invitation['inviter_username']
-                ]
+                'car_number' => $invitation['car_number'],
+                'status' => $invitation['invitation_status']
             ];
             $result['message'] = '📨 Найдено приглашение в клуб';
         }

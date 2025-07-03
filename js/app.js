@@ -2754,8 +2754,8 @@ class CabrioRideApp {
         let html = '';
         
         if (result.type === 'member') {
-            const car = result.data.car;
-            const member = result.data.member;
+            const regNumber = result.data.reg_number;
+            const status = result.data.status;
             
             html = `
                 <div class="check-result found">
@@ -2765,31 +2765,17 @@ class CabrioRideApp {
                     </div>
                     <div class="result-details">
                         <div class="car-info">
-                            <div class="car-main">
-                                <strong>${car.brand} ${car.model}</strong>
-                                <span class="car-year">${car.year}</span>
-                            </div>
                             <div class="car-details">
-                                <span class="car-number">${car.reg_number}</span>
-                                ${car.color ? `<span class="car-color">${car.color}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="member-info">
-                            <div class="member-name">
-                                <strong>${member.first_name} ${member.last_name || ''}</strong>
-                                ${member.username ? `<span class="member-username">@${member.username}</span>` : ''}
-                            </div>
-                            <div class="member-status">
-                                <span class="status-badge status-${member.status}">${this.getStatusDisplayName(member.status)}</span>
-                                ${member.city ? `<span class="member-city">${member.city}</span>` : ''}
+                                <span class="car-number">${regNumber}</span>
+                                <span class="status-badge status-${status}">${this.getStatusDisplayName(status)}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
         } else if (result.type === 'invitation') {
-            const invitation = result.data.invitation;
-            const inviter = result.data.inviter;
+            const carNumber = result.data.car_number;
+            const status = result.data.status;
             
             html = `
                 <div class="check-result invitation">
@@ -2799,26 +2785,9 @@ class CabrioRideApp {
                     </div>
                     <div class="result-details">
                         <div class="car-info">
-                            <div class="car-main">
-                                <strong>${invitation.brand} ${invitation.model}</strong>
-                                <span class="car-year">${invitation.year}</span>
-                            </div>
                             <div class="car-details">
-                                <span class="car-number">${invitation.car_number}</span>
-                            </div>
-                        </div>
-                        <div class="invitation-info">
-                            <div class="invitation-status">
-                                <span class="status-badge status-${invitation.status}">${this.getInvitationStatusDisplayName(invitation.status)}</span>
-                            </div>
-                            ${inviter.first_name ? `
-                                <div class="inviter-info">
-                                    <span>Пригласил: ${inviter.first_name} ${inviter.last_name || ''}</span>
-                                    ${inviter.username ? `<span class="inviter-username">@${inviter.username}</span>` : ''}
-                                </div>
-                            ` : ''}
-                            <div class="invitation-date">
-                                <span>Создано: ${this.formatDate(invitation.created_at)}</span>
+                                <span class="car-number">${carNumber}</span>
+                                <span class="status-badge status-${status.replace(' ', '-')}">${this.getInvitationStatusDisplayName(status)}</span>
                             </div>
                         </div>
                     </div>
