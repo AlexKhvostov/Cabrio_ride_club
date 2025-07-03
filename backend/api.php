@@ -1228,11 +1228,11 @@ function handleCheckCarNumberRequest() {
             $stmt = $pdo->prepare('
                 SELECT 
                     c.reg_number,
-                    m.status as member_status
+                    COALESCE(m.status, "приглашение") as member_status
                 FROM cars c
-                JOIN members m ON c.member_id = m.id
+                LEFT JOIN members m ON c.member_id = m.id
                 WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
-                  AND m.status NOT IN ("вышел", "заблокирован")
+                  AND (m.status IS NULL OR m.status NOT IN ("вышел", "заблокирован"))
                 LIMIT 1
             ');
             $stmt->execute(['%' . $regNumber . '%']);
