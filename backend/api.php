@@ -1208,11 +1208,19 @@ function handleCheckCarNumberRequest() {
     // Валидация: только латиница и цифры, минимум 3 символа
     if (!preg_match('/^[A-Za-z0-9]{3,}$/', $regNumber)) {
         sendSuccess(['found' => false, 'message' => 'Неверный формат номера']);
+        return; // Добавляем return чтобы прервать выполнение
     }
     
     try {
         // Логируем запрос для отладки
         logApiCall('check_car_number', null, "Searching for: $regNumber");
+        
+        // Проверяем подключение к БД
+        if (!$pdo) {
+            logApiCall('check_car_number', null, "Database connection failed");
+            sendError('Database connection failed');
+            return;
+        }
         
         // Поиск среди машин участников клуба
         $stmt = $pdo->prepare('
@@ -1274,10 +1282,14 @@ function handleCheckCarNumberRequest() {
             $result['message'] = '📨 Найдено приглашение в клуб';
         }
         
+        // Логируем результат
+        logApiCall('check_car_number', null, "Result: " . json_encode($result, JSON_UNESCAPED_UNICODE));
+        
         sendSuccess($result);
         
     } catch (PDOException $e) {
         error_log("Check car number error: " . $e->getMessage());
+        logApiCall('check_car_number', null, "Database error: " . $e->getMessage());
         sendError('Ошибка базы данных');
     }
 }

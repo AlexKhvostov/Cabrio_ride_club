@@ -2724,7 +2724,9 @@ class CabrioRideApp {
                         this.showCheckResult('❌ Совпадений не найдено', 'not-found');
                     }
                 } catch (err) {
-                    this.showCheckResult('⚠️ Ошибка проверки. Попробуйте позже.', 'error');
+                    console.error('❌ Ошибка поиска:', err);
+                    const errorMessage = err.message || '⚠️ Ошибка проверки. Попробуйте позже.';
+                    this.showCheckResult(errorMessage, 'error');
                 }
                 submitBtn.disabled = false;
             };
@@ -2826,16 +2828,27 @@ class CabrioRideApp {
     async checkCarNumber(number) {
         // Запрос к API
         const apiUrl = this.getApiUrl('check_car_number');
+        console.log('🔍 Отправляем запрос:', { url: apiUrl, number: number });
+        
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ reg_number: number })
         });
+        
+        console.log('📡 Получен ответ:', { status: response.status, statusText: response.statusText });
+        
         const result = await response.json();
+        console.log('📋 Результат API:', result);
+        
         if (result.success && result.data) {
             return result.data;
         }
-        throw new Error('Ошибка API');
+        
+        // Если API вернул ошибку, выбрасываем её с сообщением
+        const errorMessage = result.error || 'Неизвестная ошибка API';
+        console.error('❌ Ошибка API:', errorMessage);
+        throw new Error(errorMessage);
     }
 }
 
