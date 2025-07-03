@@ -373,8 +373,16 @@ class CabrioRideApp {
 
     async handleAutoAuth() {
         const urlParams = new URLSearchParams(window.location.search);
-        const authData = urlParams.get('auth');
         
+        // Проверяем URL параметр для принудительной авторизации разработки
+        const devAuth = urlParams.get('dev_auth');
+        if (devAuth) {
+            console.log('🔧 Dev auth parameter detected');
+            return await this.autoAuthForDev();
+        }
+        
+        // Проверяем обычные данные авторизации из URL
+        const authData = urlParams.get('auth');
         if (authData) {
             console.log('URL auth data found, processing...');
             try {
@@ -404,7 +412,72 @@ class CabrioRideApp {
             return true; // Указываем, что обработали URL auth
         }
         
-        return false; // Нет URL auth данных
+        // Проверяем автоматическую авторизацию для разработческой среды
+        if (this.isDevMode) {
+            console.log('🔧 Development mode detected - attempting auto auth');
+            return await this.autoAuthForDev();
+        }
+        
+        return false; // Нет данных для авторизации
+    }
+
+    // Проверка режима разработки
+    get isDevMode() {
+        // Проверяем URL параметр для принудительной авторизации
+        if (window.location.search.includes('dev_auth')) {
+            return true;
+        }
+        
+        // Проверяем локальную разработку
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.protocol === 'file:';
+        
+        // Проверяем поддомен разработки (если есть)
+        const isDevSubdomain = window.location.hostname.includes('dev.') || 
+                              window.location.hostname.includes('test.');
+        
+        return isLocalhost || isDevSubdomain;
+    }
+
+    // Автоматическая авторизация для разработки
+    async autoAuthForDev() {
+        console.log('🔧 Attempting auto auth for development...');
+        
+        try {
+            // Создаем тестового пользователя для разработки
+            const devUser = {
+                id: 287536885, // ID из конфигурации (ADMIN_IDS)
+                first_name: 'Разработчик',
+                last_name: 'CabrioRide',
+                username: 'dev_cabrio',
+                photo_url: null,
+                status: 'активный',
+                member_id: 1
+            };
+            
+            // Проверяем пользователя через API
+            const response = await this.verifyUser(devUser);
+            console.log('Dev auth response:', response);
+            
+            if (response.success && response.data.access) {
+                console.log('✅ Auto auth successful');
+                this.currentUser = devUser;
+                this.storeUser(devUser);
+                await this.showApp();
+                
+                // Показываем уведомление о режиме разработки
+                this.showNotification('🔧 Режим разработки: автоматическая авторизация', 'info');
+                
+                return true;
+            } else {
+                console.log('❌ Auto auth failed - user not found or no access');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Auto auth error:', error);
+            return false;
+        }
     }
 
     async handleTelegramLogin() {
@@ -2448,10 +2521,15 @@ class CabrioRideApp {
         if (input && submitBtn) {
             input.addEventListener('input', () => {
                 const value = input.value.trim();
-                // Только латиница и цифры, минимум 3 символа
-                const valid = /^[A-Za-z0-9]{3,}$/.test(value);
+                // Только латиница и цифры, минимум 3 символа, максимум 8
+                const valid = /^[A-Za-z0-9]{3,8}$/.test(value);
                 submitBtn.disabled = !valid;
-                document.getElementById('check-number-result').textContent = '';
+                this.clearCheckResult();
+            });
+            
+            // Автоматическое преобразование в верхний регистр
+            input.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase();
             });
         }
         // Обработка формы
@@ -2460,21 +2538,37 @@ class CabrioRideApp {
             form.onsubmit = async (e) => {
                 e.preventDefault();
                 const value = input.value.trim();
-                if (!/^[A-Za-z0-9]{3,}$/.test(value)) return;
+                if (!/^[A-Za-z0-9]{3,8}$/.test(value)) return;
                 submitBtn.disabled = true;
-                document.getElementById('check-number-result').textContent = 'Проверка...';
+                this.showCheckResult('Проверка...', 'loading');
                 try {
                     const found = await this.checkCarNumber(value);
                     if (found) {
-                        document.getElementById('check-number-result').innerHTML = '<span style="color:green;font-weight:600;">Найдены совпадения в базе клуба</span>';
+                        this.showCheckResult('✅ Найдены совпадения в базе клуба!', 'found');
                     } else {
-                        document.getElementById('check-number-result').innerHTML = '<span style="color:#b00;font-weight:600;">Совпадений не найдено</span>';
+                        this.showCheckResult('❌ Совпадений не найдено', 'not-found');
                     }
                 } catch (err) {
-                    document.getElementById('check-number-result').innerHTML = '<span style="color:#b00;">Ошибка проверки. Попробуйте позже.</span>';
+                    this.showCheckResult('⚠️ Ошибка проверки. Попробуйте позже.', 'error');
                 }
                 submitBtn.disabled = false;
             };
+        }
+    }
+
+    clearCheckResult() {
+        const resultElement = document.getElementById('check-number-result');
+        if (resultElement) {
+            resultElement.textContent = '';
+            resultElement.className = 'check-result';
+        }
+    }
+
+    showCheckResult(message, type = 'info') {
+        const resultElement = document.getElementById('check-number-result');
+        if (resultElement) {
+            resultElement.textContent = message;
+            resultElement.className = `check-result ${type}`;
         }
     }
 

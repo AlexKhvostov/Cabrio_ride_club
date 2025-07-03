@@ -2694,3 +2694,208 @@ select:focus-visible {
     margin-right: 0.5rem;
     flex-shrink: 0;
 }
+
+/* Специальные стили для модального окна поиска номера */
+.check-number-modal {
+    max-width: 400px !important;
+    width: 90% !important;
+    max-height: 80vh !important;
+    margin: 20px auto !important;
+}
+
+.check-number-modal .modal-header {
+    padding: 1rem 1.5rem 0.75rem !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.check-number-modal .modal-header h3 {
+    font-size: 1.1rem !important;
+    margin: 0;
+}
+
+.check-number-modal .modal-form {
+    padding: 1rem 1.5rem 1.5rem !important;
+}
+
+.check-number-modal .form-group {
+    margin-bottom: 1rem !important;
+}
+
+.check-number-modal .form-group label {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.5rem !important;
+    color: var(--text-secondary);
+}
+
+.check-number-modal .form-group input {
+    padding: 0.75rem 1rem !important;
+    font-size: 1.1rem !important;
+    text-align: center !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    background: var(--bg-card) !important;
+    transition: all 0.3s ease !important;
+}
+
+.check-number-modal .form-group input:focus {
+    border-color: var(--primary-green) !important;
+    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+
+.check-number-modal .form-group input::placeholder {
+    color: var(--text-muted) !important;
+    font-weight: normal !important;
+}
+
+.check-number-modal .form-actions {
+    margin-top: 1.5rem !important;
+    padding-top: 1rem !important;
+    gap: 0.75rem !important;
+}
+
+.check-number-modal .btn-primary,
+.check-number-modal .btn-secondary {
+    padding: 0.75rem 1.5rem !important;
+    min-width: 120px !important;
+    font-size: 0.9rem !important;
+}
+
+.check-result {
+    margin-top: 1rem !important;
+    padding: 0.75rem !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    font-size: 0.9rem !important;
+    min-height: 20px !important;
+    transition: all 0.3s ease !important;
+}
+
+.check-result:empty {
+    display: none !important;
+}
+
+/* Мобильная оптимизация для поиска номера */
+@media (max-width: 768px) {
+    .check-number-modal {
+        width: 95% !important;
+        max-width: 350px !important;
+        margin: 10px auto !important;
+        max-height: 70vh !important;
+        /* Позиционируем в верхней части экрана */
+        position: fixed !important;
+        top: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: auto !important;
+    }
+    
+    .check-number-modal .modal-header {
+        padding: 0.75rem 1rem 0.5rem !important;
+    }
+    
+    .check-number-modal .modal-header h3 {
+        font-size: 1rem !important;
+    }
+    
+    .check-number-modal .modal-form {
+        padding: 0.75rem 1rem 1rem !important;
+    }
+    
+    .check-number-modal .form-group input {
+        padding: 0.875rem 0.75rem !important;
+        font-size: 1rem !important;
+        /* Предотвращаем зум на iOS */
+        font-size: 16px !important;
+    }
+    
+    .check-number-modal .form-actions {
+        flex-direction: row !important;
+        gap: 0.5rem !important;
+    }
+    
+    .check-number-modal .btn-primary,
+    .check-number-modal .btn-secondary {
+        flex: 1 !important;
+        padding: 0.875rem 0.75rem !important;
+        font-size: 0.85rem !important;
+        min-width: auto !important;
+    }
+    
+    .check-result {
+        margin-top: 0.75rem !important;
+        padding: 0.5rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 480px) {
+    .check-number-modal {
+        width: 98% !important;
+        max-width: 320px !important;
+        top: 10px !important;
+    }
+    
+    .check-number-modal .form-actions {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .check-number-modal .btn-primary,
+    .check-number-modal .btn-secondary {
+        width: 100% !important;
+    }
+}
+
+/* Предотвращение зума на мобильных устройствах */
+@media screen and (max-width: 768px) {
+    .check-number-modal .form-group input {
+        font-size: 16px !important;
+    }
+}
+
+/* Анимации для результатов */
+@keyframes resultFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.check-result:not(:empty) {
+    animation: resultFadeIn 0.3s ease-out;
+}
+
+/* Стили для результатов поиска */
+.check-result .found {
+    background: rgba(0, 255, 136, 0.15) !important;
+    border: 1px solid var(--primary-green) !important;
+    color: var(--primary-green) !important;
+}
+
+.check-result .not-found {
+    background: rgba(255, 51, 102, 0.15) !important;
+    border: 1px solid var(--primary-red) !important;
+    color: var(--primary-red) !important;
+}
+
+.check-result .error {
+    background: rgba(255, 153, 0, 0.15) !important;
+    border: 1px solid var(--primary-orange) !important;
+    color: var(--primary-orange) !important;
+}
+
+.check-result .loading {
+    background: rgba(0, 153, 255, 0.15) !important;
+    border: 1px solid var(--primary-blue) !important;
+    color: var(--primary-blue) !important;
+}

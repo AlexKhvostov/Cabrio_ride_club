@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тест модального окна поиска номера</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        .test-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Тест модального окна поиска номера</h1>
+        
+        <div class="test-info">
+            <h3>Что тестируем:</h3>
+            <ul>
+                <li>✅ Компактный размер модального окна</li>
+                <li>✅ Поле ввода на 8 символов максимум</li>
+                <li>✅ Мобильная адаптация (верхняя часть экрана)</li>
+                <li>✅ Яркие результаты поиска</li>
+                <li>✅ Предотвращение зума на мобильных</li>
+                <li>✅ Автоматическое преобразование в верхний регистр</li>
+            </ul>
+        </div>
+
+        <button class="test-button" onclick="openTestModal()">Открыть модальное окно поиска</button>
+        
+        <div class="test-info">
+            <h3>Инструкции для тестирования:</h3>
+            <ol>
+                <li>Нажмите кнопку "Открыть модальное окно поиска"</li>
+                <li>Попробуйте ввести разные номера (3-8 символов)</li>
+                <li>На мобильном устройстве проверьте позиционирование</li>
+                <li>Убедитесь, что клавиатура не перекрывает окно</li>
+                <li>Проверьте, что зум не происходит</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Модальное окно проверки номера -->
+    <div id="check-number-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content form-modal check-number-modal">
+            <div class="modal-header">
+                <h3>🔍 Проверка номера</h3>
+                <button class="modal-close" onclick="closeTestModal()">✕</button>
+            </div>
+            <form id="check-number-form" class="modal-form">
+                <div class="form-group">
+                    <label for="car-number-input">Введите номер (3-8 символов)</label>
+                    <input type="text" 
+                           id="car-number-input" 
+                           name="car_number" 
+                           pattern="[A-Za-z0-9]{3,8}" 
+                           minlength="3" 
+                           maxlength="8" 
+                           required 
+                           autocomplete="off" 
+                           placeholder="70MX"
+                           style="text-transform: uppercase; font-size: 1.1rem; text-align: center; letter-spacing: 1px;">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeTestModal()">Отмена</button>
+                    <button type="submit" class="btn-primary" id="btn-submit-check-number" disabled>Проверить</button>
+                </div>
+                <div id="check-number-result" class="check-result"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openTestModal() {
+            document.getElementById('check-number-modal').classList.remove('hidden');
+            document.getElementById('car-number-input').focus();
+        }
+
+        function closeTestModal() {
+            document.getElementById('check-number-modal').classList.add('hidden');
+            document.getElementById('car-number-input').value = '';
+            document.getElementById('check-number-result').textContent = '';
+            document.getElementById('check-number-result').className = 'check-result';
+            document.getElementById('btn-submit-check-number').disabled = true;
+        }
+
+        // Настройка валидации и обработки
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('car-number-input');
+            const submitBtn = document.getElementById('btn-submit-check-number');
+            const form = document.getElementById('check-number-form');
+
+            // Валидация поля ввода
+            if (input && submitBtn) {
+                input.addEventListener('input', () => {
+                    const value = input.value.trim();
+                    const valid = /^[A-Za-z0-9]{3,8}$/.test(value);
+                    submitBtn.disabled = !valid;
+                    clearCheckResult();
+                });
+                
+                // Автоматическое преобразование в верхний регистр
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            }
+
+            // Обработка формы
+            if (form) {
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const value = input.value.trim();
+                    if (!/^[A-Za-z0-9]{3,8}$/.test(value)) return;
+                    
+                    submitBtn.disabled = true;
+                    showCheckResult('Проверка...', 'loading');
+                    
+                    // Имитация API запроса
+                    setTimeout(() => {
+                        const random = Math.random();
+                        if (random > 0.5) {
+                            showCheckResult('✅ Найдены совпадения в базе клуба!', 'found');
+                        } else {
+                            showCheckResult('❌ Совпадений не найдено', 'not-found');
+                        }
+                        submitBtn.disabled = false;
+                    }, 1000);
+                };
+            }
+        });
+
+        function clearCheckResult() {
+            const resultElement = document.getElementById('check-number-result');
+            if (resultElement) {
+                resultElement.textContent = '';
+                resultElement.className = 'check-result';
+            }
+        }
+
+        function showCheckResult(message, type = 'info') {
+            const resultElement = document.getElementById('check-number-result');
+            if (resultElement) {
+                resultElement.textContent = message;
+                resultElement.className = `check-result ${type}`;
+            }
+        }
+
+        // Закрытие по клику на overlay
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeTestModal();
+            }
+        });
+    </script>
+</body>
+</html> 

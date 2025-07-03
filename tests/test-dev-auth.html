@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тест автоматической авторизации для разработки</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        .test-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .dev-mode {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+        .prod-mode {
+            background: rgba(255, 51, 102, 0.2);
+            border: 1px solid #ff3366;
+            color: #ff3366;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Тест автоматической авторизации</h1>
+        
+        <div class="test-info">
+            <h3>Текущая среда:</h3>
+            <div id="environment-info"></div>
+        </div>
+
+        <div class="test-info">
+            <h3>Варианты тестирования:</h3>
+            <ul>
+                <li><strong>Автоматическая авторизация:</strong> Работает на localhost, 127.0.0.1, file:// и поддоменах dev.*/test.*</li>
+                <li><strong>Принудительная авторизация:</strong> Добавьте ?dev_auth к URL</li>
+                <li><strong>Продакшн режим:</strong> Требует авторизацию через Telegram</li>
+            </ul>
+        </div>
+
+        <div class="test-info">
+            <h3>Ссылки для тестирования:</h3>
+            <a href="../index.html" class="test-button">🏠 Основная страница</a>
+            <a href="../index.html?dev_auth" class="test-button">🔧 Принудительная авторизация</a>
+            <a href="../index.html?test" class="test-button">🧪 Тестовый режим</a>
+        </div>
+
+        <div class="test-info">
+            <h3>Инструкции:</h3>
+            <ol>
+                <li><strong>Для разработки:</strong> Откройте основную страницу на localhost - авторизация произойдет автоматически</li>
+                <li><strong>Для принудительной авторизации:</strong> Добавьте ?dev_auth к URL</li>
+                <li><strong>Для продакшена:</strong> Используйте обычную авторизацию через Telegram</li>
+                <li><strong>Для тестирования:</strong> Используйте ?test для полного тестового режима</li>
+            </ol>
+        </div>
+
+        <div class="test-info">
+            <h3>Тестовый пользователь для разработки:</h3>
+            <ul>
+                <li><strong>ID:</strong> 287536885 (из ADMIN_IDS)</li>
+                <li><strong>Имя:</strong> Разработчик CabrioRide</li>
+                <li><strong>Username:</strong> dev_cabrio</li>
+                <li><strong>Статус:</strong> активный</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Определяем текущую среду
+        function detectEnvironment() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            const search = window.location.search;
+            
+            let env = 'production';
+            let details = [];
+            
+            // Проверяем локальную разработку
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                env = 'development';
+                details.push('localhost/127.0.0.1');
+            }
+            
+            // Проверяем file:// протокол
+            if (protocol === 'file:') {
+                env = 'development';
+                details.push('file:// protocol');
+            }
+            
+            // Проверяем поддомены разработки
+            if (hostname.includes('dev.') || hostname.includes('test.')) {
+                env = 'development';
+                details.push('dev/test subdomain');
+            }
+            
+            // Проверяем URL параметры
+            if (search.includes('dev_auth')) {
+                env = 'development';
+                details.push('dev_auth parameter');
+            }
+            
+            if (search.includes('test')) {
+                env = 'test';
+                details.push('test parameter');
+            }
+            
+            return { env, details };
+        }
+        
+        // Отображаем информацию о среде
+        function displayEnvironmentInfo() {
+            const envInfo = detectEnvironment();
+            const container = document.getElementById('environment-info');
+            
+            const className = envInfo.env === 'development' ? 'dev-mode' : 'prod-mode';
+            const icon = envInfo.env === 'development' ? '🔧' : '🚀';
+            
+            container.innerHTML = `
+                <div class="${className}" style="padding: 10px; border-radius: 6px; margin: 10px 0;">
+                    <strong>${icon} ${envInfo.env.toUpperCase()}</strong>
+                    <br>
+                    <small>${envInfo.details.join(', ')}</small>
+                </div>
+            `;
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            displayEnvironmentInfo();
+            
+            console.log('🔧 Dev Auth Test Page Loaded');
+            console.log('Environment:', detectEnvironment());
+        });
+    </script>
+</body>
+</html> 

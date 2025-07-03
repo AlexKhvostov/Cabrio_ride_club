@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CabrioRide Dashboard</title>
     <meta name="description" content="Веб-дашборд для участников клуба кабриолетов CabrioRide">
     <meta name="theme-color" content="#0a0a0a">
@@ -96,21 +96,30 @@
     <!-- Модальное окно проверки номера -->
     <div id="check-number-modal" class="modal hidden">
         <div class="modal-overlay"></div>
-        <div class="modal-content form-modal">
+        <div class="modal-content form-modal check-number-modal">
             <div class="modal-header">
-                <h3>Проверка номера автомобиля</h3>
+                <h3>🔍 Проверка номера</h3>
                 <button class="modal-close" onclick="app.closeModal('check-number-modal')">✕</button>
             </div>
             <form id="check-number-form" class="modal-form">
                 <div class="form-group">
-                    <label for="car-number-input">Введите часть номера (латиница и цифры, минимум 3 символа)</label>
-                    <input type="text" id="car-number-input" name="car_number" pattern="[A-Za-z0-9]{3,}" minlength="3" maxlength="12" required autocomplete="off" placeholder="Например: 70MX">
+                    <label for="car-number-input">Введите номер (3-8 символов)</label>
+                    <input type="text" 
+                           id="car-number-input" 
+                           name="car_number" 
+                           pattern="[A-Za-z0-9]{3,8}" 
+                           minlength="3" 
+                           maxlength="8" 
+                           required 
+                           autocomplete="off" 
+                           placeholder="70MX"
+                           style="text-transform: uppercase; font-size: 1.1rem; text-align: center; letter-spacing: 1px;">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="app.closeModal('check-number-modal')">Отмена</button>
                     <button type="submit" class="btn-primary" id="btn-submit-check-number" disabled>Проверить</button>
                 </div>
-                <div id="check-number-result" style="margin-top:10px;"></div>
+                <div id="check-number-result" class="check-result"></div>
             </form>
         </div>
     </div>
