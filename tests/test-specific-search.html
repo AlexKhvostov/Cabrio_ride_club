@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест поиска 1221A11 - CabrioRide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-input {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px;
+            width: 200px;
+        }
+        .test-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #555;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .info { color: #74c0fc; }
+        .warning { color: #ffd43b; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Тест поиска номера 1221A11</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Тест поиска</h2>
+        <input type="text" id="search-number" class="test-input" placeholder="Введите номер" value="122">
+        <button class="test-button" onclick="testSearch()">🔍 Поиск</button>
+        <button class="test-button" onclick="testSpecificNumbers()">🧪 Тест вариантов</button>
+        <button class="test-button" onclick="clearLog()">🧹 Очистить</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Результат</h2>
+        <div id="result" class="result">
+            <p>Результат появится здесь...</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Подробный лог</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function testSearch() {
+            const number = document.getElementById('search-number').value.trim();
+            
+            if (!number) {
+                log('❌ Введите номер для поиска', 'error');
+                return;
+            }
+
+            log(`🔍 Тестируем поиск номера: "${number}"`);
+            
+            try {
+                const response = await fetch('backend/api.php?action=check_car_number', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reg_number: number })
+                });
+
+                log(`📡 HTTP статус: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const responseText = await response.text();
+                log(`📋 Сырой ответ: ${responseText}`);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    log(`✅ JSON успешно распарсен`);
+                } catch (parseError) {
+                    log(`❌ Ошибка парсинга JSON: ${parseError.message}`, 'error');
+                    updateResult(null);
+                    return;
+                }
+                
+                if (result.success) {
+                    log(`✅ API успех: ${result.data.found ? 'найдено' : 'не найдено'}`, 'success');
+                    log(`📋 Тип: ${result.data.type || 'не указан'}`);
+                    log(`💬 Сообщение: ${result.data.message}`);
+                    updateResult(result);
+                } else {
+                    log(`❌ Ошибка API: ${result.error}`, 'error');
+                    updateResult(result);
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка запроса: ${error.message}`, 'error');
+                updateResult(null);
+            }
+        }
+
+        async function testSpecificNumbers() {
+            const testNumbers = ['122', '1221', '1221A', '1221A1', '1221A11', 'A11', '11'];
+            
+            log(`🧪 Тестируем варианты поиска для номера 1221A11:`);
+            log(`📋 Варианты: ${testNumbers.join(', ')}`);
+            
+            for (const number of testNumbers) {
+                log(`\n--- Тест номера: ${number} ---`);
+                document.getElementById('search-number').value = number;
+                await testSearch();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Пауза 1 секунда
+            }
+            
+            log(`\n✅ Тестирование завершено`);
+        }
+
+        // Обработка Enter в поле ввода
+        document.getElementById('search-number').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testSearch();
+            }
+        });
+
+        // Автоматический тест при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Тест поиска номера 1221A11 готов к работе');
+            log('💡 Нажмите "Поиск" или Enter для тестирования');
+            log('🧪 Или нажмите "Тест вариантов" для проверки разных частей номера');
+        });
+    </script>
+</body>
+</html> 
