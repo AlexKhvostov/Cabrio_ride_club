@@ -144,8 +144,6 @@ class CabrioRideApp {
             this.showError('Ошибка инициализации приложения');
             this.showLogin();
         }
-        this.setupEventListeners();
-        this.setupCheckNumberModal();
     }
 
     setupEventListeners() {
@@ -163,7 +161,9 @@ class CabrioRideApp {
 
         // Unlink account button
         const unlinkBtn = document.getElementById('unlink-btn');
+        console.log('🔍 Ищем кнопку отвязки аккаунта:', unlinkBtn);
         if (unlinkBtn) {
+            console.log('✅ Кнопка отвязки найдена, добавляем обработчик');
             unlinkBtn.addEventListener('click', () => {
                 console.log('🔗 Кнопка отвязки аккаунта нажата');
                 this.unlinkAccount();
@@ -591,6 +591,7 @@ class CabrioRideApp {
 
     unlinkAccount() {
         console.log('🔗 Начинаем процесс отвязки аккаунта...');
+        console.log('🔍 Текущий пользователь:', this.currentUser);
         
         // Проверяем, есть ли активный пользователь
         if (!this.currentUser) {
@@ -600,6 +601,7 @@ class CabrioRideApp {
         }
         
         const userName = this.currentUser.first_name || 'Пользователь';
+        console.log(`👤 Отвязываем аккаунт пользователя: ${userName}`);
         
         if (confirm(`Вы уверены, что хотите отвязать аккаунт Telegram (${userName})?\n\nВам потребуется заново авторизоваться через Telegram для доступа к сайту.`)) {
             console.log('✅ Пользователь подтвердил отвязку аккаунта');
@@ -670,6 +672,12 @@ class CabrioRideApp {
         } else {
             console.error('❌ Не найдены необходимые элементы: login-screen или app');
         }
+        
+        // Настраиваем обработчики событий ПОСЛЕ показа приложения
+        this.setupEventListeners();
+        
+        // Настраиваем модальное окно проверки номера
+        this.setupCheckNumberModal();
         
         // Настраиваем обработчики фильтров после загрузки данных
         this.setupFilterListeners();

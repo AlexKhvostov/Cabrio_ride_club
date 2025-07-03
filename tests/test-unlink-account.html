@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест отвязки аккаунта - CabrioRide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.danger {
+            background: #dc3545;
+        }
+        .test-button.danger:hover {
+            background: #c82333;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+        .status.info {
+            background: #17a2b8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест отвязки аккаунта</h1>
+    
+    <div class="test-section">
+        <h2>📊 Текущее состояние</h2>
+        <div id="current-status" class="status info">Проверяем...</div>
+        <button class="test-button" onclick="checkCurrentStatus()">🔄 Обновить статус</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Тест отвязки аккаунта</h2>
+        <p>Этот тест проверит функцию отвязки аккаунта и очистки данных.</p>
+        
+        <button class="test-button danger" onclick="testUnlinkAccount()">🔗 Тест отвязки аккаунта</button>
+        <button class="test-button" onclick="testClearStoredUser()">🗑️ Тест очистки данных</button>
+        <button class="test-button" onclick="testLogout()">🚪 Тест выхода</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Лог операций</h2>
+        <div id="log" class="log"></div>
+        <button class="test-button" onclick="clearLog()">🧹 Очистить лог</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Ручное управление</h2>
+        <button class="test-button" onclick="manualClearLocalStorage()">🗑️ Очистить localStorage</button>
+        <button class="test-button" onclick="manualClearSessionStorage()">🗑️ Очистить sessionStorage</button>
+        <button class="test-button" onclick="showAllStorage()">👁️ Показать все данные</button>
+    </div>
+
+    <script>
+        // Подключаем основные скрипты
+        document.addEventListener('DOMContentLoaded', function() {
+            // Загружаем скрипты
+            loadScript('js/data.js');
+            loadScript('js/real-api.js');
+            loadScript('js/app.js');
+            
+            setTimeout(() => {
+                checkCurrentStatus();
+            }, 1000);
+        });
+
+        function loadScript(src) {
+            const script = document.createElement('script');
+            script.src = src;
+            document.head.appendChild(script);
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#74c0fc';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('current-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function checkCurrentStatus() {
+            log('🔍 Проверяем текущее состояние...');
+            
+            // Проверяем localStorage
+            const storedUser = localStorage.getItem('telegram_user');
+            const authTimestamp = localStorage.getItem('auth_timestamp');
+            
+            // Проверяем sessionStorage
+            const sessionData = Object.keys(sessionStorage);
+            
+            // Проверяем глобальную переменную app
+            const hasApp = typeof window.app !== 'undefined';
+            const hasCurrentUser = hasApp && window.app.currentUser;
+            
+            let status = '';
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    status += `✅ Пользователь в localStorage: ${user.first_name} ${user.last_name || ''}\n`;
+                } catch (e) {
+                    status += `❌ Ошибка парсинга пользователя: ${e.message}\n`;
+                }
+            } else {
+                status += `❌ Нет пользователя в localStorage\n`;
+            }
+            
+            if (authTimestamp) {
+                const time = new Date(parseInt(authTimestamp));
+                status += `⏰ Время авторизации: ${time.toLocaleString()}\n`;
+            } else {
+                status += `⏰ Нет времени авторизации\n`;
+            }
+            
+            if (sessionData.length > 0) {
+                status += `📦 SessionStorage: ${sessionData.join(', ')}\n`;
+            } else {
+                status += `📦 SessionStorage пуст\n`;
+            }
+            
+            if (hasApp) {
+                status += `🚀 Приложение инициализировано\n`;
+                if (hasCurrentUser) {
+                    status += `👤 Текущий пользователь: ${window.app.currentUser.first_name}\n`;
+                } else {
+                    status += `👤 Нет текущего пользователя\n`;
+                }
+            } else {
+                status += `❌ Приложение не инициализировано\n`;
+            }
+            
+            updateStatus(status, storedUser ? 'success' : 'info');
+            log(status);
+        }
+
+        function testUnlinkAccount() {
+            log('🔗 Тестируем отвязку аккаунта...');
+            
+            if (typeof window.app === 'undefined') {
+                log('❌ Приложение не инициализировано', 'error');
+                return;
+            }
+            
+            if (!window.app.currentUser) {
+                log('❌ Нет текущего пользователя для отвязки', 'error');
+                return;
+            }
+            
+            log(`👤 Отвязываем аккаунт: ${window.app.currentUser.first_name}`);
+            
+            // Вызываем функцию отвязки
+            try {
+                window.app.unlinkAccount();
+                log('✅ Функция отвязки вызвана', 'success');
+                
+                // Проверяем результат через 1 секунду
+                setTimeout(() => {
+                    checkCurrentStatus();
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Ошибка при отвязке: ${error.message}`, 'error');
+            }
+        }
+
+        function testClearStoredUser() {
+            log('🗑️ Тестируем очистку данных пользователя...');
+            
+            if (typeof window.app === 'undefined') {
+                log('❌ Приложение не инициализировано', 'error');
+                return;
+            }
+            
+            try {
+                window.app.clearStoredUser();
+                log('✅ Данные пользователя очищены', 'success');
+                
+                setTimeout(() => {
+                    checkCurrentStatus();
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ Ошибка при очистке: ${error.message}`, 'error');
+            }
+        }
+
+        function testLogout() {
+            log('🚪 Тестируем выход из системы...');
+            
+            if (typeof window.app === 'undefined') {
+                log('❌ Приложение не инициализировано', 'error');
+                return;
+            }
+            
+            try {
+                window.app.logout();
+                log('✅ Функция выхода вызвана', 'success');
+                
+                setTimeout(() => {
+                    checkCurrentStatus();
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ Ошибка при выходе: ${error.message}`, 'error');
+            }
+        }
+
+        function manualClearLocalStorage() {
+            log('🗑️ Ручная очистка localStorage...');
+            localStorage.clear();
+            log('✅ localStorage очищен', 'success');
+            checkCurrentStatus();
+        }
+
+        function manualClearSessionStorage() {
+            log('🗑️ Ручная очистка sessionStorage...');
+            sessionStorage.clear();
+            log('✅ sessionStorage очищен', 'success');
+            checkCurrentStatus();
+        }
+
+        function showAllStorage() {
+            log('👁️ Показываем все данные хранилища...');
+            
+            log('📦 localStorage:');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                log(`  ${key}: ${value}`);
+            }
+            
+            log('📦 sessionStorage:');
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                log(`  ${key}: ${value}`);
+            }
+        }
+
+        // Перехватываем console.log для отображения в логе
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log(`LOG: ${args.join(' ')}`);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log(`ERROR: ${args.join(' ')}`, 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log(`WARN: ${args.join(' ')}`);
+        };
+    </script>
+</body>
+</html> 
