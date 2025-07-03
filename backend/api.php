@@ -1232,7 +1232,7 @@ function handleCheckCarNumberRequest() {
                 FROM cars c
                 JOIN members m ON c.member_id = m.id
                 WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
-                  AND m.status IN ("активный", "участник", "новый")
+                  AND m.status NOT IN ("вышел", "заблокирован")
                 LIMIT 1
             ');
             $stmt->execute(['%' . $regNumber . '%']);
@@ -1255,7 +1255,7 @@ function handleCheckCarNumberRequest() {
                     i.status as invitation_status
                 FROM invitations i
                 WHERE REPLACE(UPPER(i.car_number), " ", "") LIKE UPPER(?)
-                  AND i.status IN ("новое", "на связи", "встреча назначена", "вступил в клуб")
+                  AND i.status NOT IN ("отклонено")
                 LIMIT 1
             ');
             $stmt->execute(['%' . $regNumber . '%']);
