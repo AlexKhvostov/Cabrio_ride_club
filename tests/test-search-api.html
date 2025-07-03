@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест API поиска - CabrioRide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-input {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px;
+            width: 200px;
+        }
+        .test-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #555;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 2px;
+        }
+        .status-активный { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .status-участник { background: rgba(255, 102, 0, 0.2); color: #ff6600; }
+        .status-новый { background: rgba(0, 153, 255, 0.2); color: #0099ff; }
+        .status-новое { background: rgba(0, 153, 255, 0.2); color: #0099ff; }
+        .status-на-связи { background: rgba(255, 102, 0, 0.2); color: #ff6600; }
+        .status-встреча-назначена { background: rgba(255, 102, 0, 0.2); color: #ff6600; }
+        .status-вступил-в-клуб { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест API поиска</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Тест поиска</h2>
+        <input type="text" id="search-number" class="test-input" placeholder="Введите номер" value="70MX">
+        <button class="test-button" onclick="testSearch()">🔍 Поиск</button>
+        <button class="test-button" onclick="clearLog()">🧹 Очистить</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Результат</h2>
+        <div id="result" class="result">
+            <p>Результат появится здесь...</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Лог</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#74c0fc';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateResult(data) {
+            const resultDiv = document.getElementById('result');
+            
+            if (!data) {
+                resultDiv.innerHTML = '<p style="color: #ff6b6b;">❌ Ошибка: нет данных</p>';
+                return;
+            }
+
+            if (!data.found) {
+                resultDiv.innerHTML = `
+                    <p style="color: #ff6b6b;">❌ Совпадений не найдено</p>
+                    <p style="color: #888;">${data.message || 'Номер не найден'}</p>
+                `;
+                return;
+            }
+
+            let html = '';
+            
+            if (data.type === 'member') {
+                const regNumber = data.data.reg_number;
+                const status = data.data.status;
+                
+                html = `
+                    <div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); border: 1px solid #444; border-radius: 8px; padding: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 1.2rem;">✅</span>
+                            <span style="font-weight: 600;">Машина участника клуба</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="background: #00ff88; color: #000; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px;">${regNumber}</span>
+                            <span class="status-badge status-${status}">${getStatusDisplayName(status)}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (data.type === 'invitation') {
+                const carNumber = data.data.car_number;
+                const status = data.data.status;
+                
+                html = `
+                    <div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); border: 1px solid #444; border-radius: 8px; padding: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 1.2rem;">📨</span>
+                            <span style="font-weight: 600;">Приглашение в клуб</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="background: #00ff88; color: #000; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px;">${carNumber}</span>
+                            <span class="status-badge status-${status.replace(' ', '-')}">${getInvitationStatusDisplayName(status)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultDiv.innerHTML = html;
+        }
+
+        function getStatusDisplayName(status) {
+            const statusMap = {
+                'активный': 'Активный участник',
+                'участник': 'Участник',
+                'новый': 'Новый участник',
+                'без авто': 'Без автомобиля',
+                'приглашение': 'Приглашён',
+                'вышел': 'Покинул клуб',
+                'заблокирован': 'Заблокирован'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getInvitationStatusDisplayName(status) {
+            const statusMap = {
+                'новое': 'Новое приглашение',
+                'на связи': 'На связи',
+                'встреча назначена': 'Встреча назначена',
+                'вступил в клуб': 'Вступил в клуб',
+                'отклонено': 'Отклонено'
+            };
+            return statusMap[status] || status;
+        }
+
+        async function testSearch() {
+            const number = document.getElementById('search-number').value.trim();
+            
+            if (!number) {
+                log('❌ Введите номер для поиска', 'error');
+                return;
+            }
+
+            log(`🔍 Тестируем поиск номера: ${number}`);
+            
+            try {
+                const response = await fetch('backend/api.php?action=check_car_number', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reg_number: number })
+                });
+
+                log(`📡 HTTP статус: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                log(`📋 Ответ получен: ${JSON.stringify(result)}`, 'success');
+                
+                if (result.success) {
+                    log(`✅ Успех: ${result.data.found ? 'найдено' : 'не найдено'}`, 'success');
+                    log(`📋 Тип: ${result.data.type || 'не указан'}`);
+                    log(`💬 Сообщение: ${result.data.message}`);
+                    updateResult(result.data);
+                } else {
+                    log(`❌ Ошибка API: ${result.error}`, 'error');
+                    updateResult(null);
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка запроса: ${error.message}`, 'error');
+                updateResult(null);
+            }
+        }
+
+        // Обработка Enter в поле ввода
+        document.getElementById('search-number').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testSearch();
+            }
+        });
+
+        // Автоматический тест при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Тест API поиска готов к работе');
+            log('💡 Нажмите "Поиск" или Enter для тестирования');
+        });
+    </script>
+</body>
+</html> 

@@ -1192,9 +1192,18 @@ function handleDeleteCarRequest() {
  * Проверка наличия номера среди машин клуба
  */
 function handleCheckCarNumberRequest() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        sendError('POST method required');
+    }
+    
     $pdo = getDbConnection();
     $input = json_decode(file_get_contents('php://input'), true);
-    $regNumber = trim($input['reg_number'] ?? '');
+    
+    if (!$input || !isset($input['reg_number'])) {
+        sendError('Registration number is required');
+    }
+    
+    $regNumber = trim($input['reg_number']);
     
     // Валидация: только латиница и цифры, минимум 3 символа
     if (!preg_match('/^[A-Za-z0-9]{3,}$/', $regNumber)) {
@@ -1202,21 +1211,14 @@ function handleCheckCarNumberRequest() {
     }
     
     try {
+        // Логируем запрос для отладки
+        logApiCall('check_car_number', null, "Searching for: $regNumber");
+        
         // Поиск среди машин участников клуба
         $stmt = $pdo->prepare('
             SELECT 
-                c.id as car_id,
-                c.brand,
-                c.model,
-                c.year,
                 c.reg_number,
-                c.color,
-                m.id as member_id,
-                m.first_name,
-                m.last_name,
-                m.username,
-                m.status as member_status,
-                m.city
+                m.status as member_status
             FROM cars c
             JOIN members m ON c.member_id = m.id
             WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
@@ -1226,27 +1228,26 @@ function handleCheckCarNumberRequest() {
         $stmt->execute(['%' . $regNumber . '%']);
         $memberCar = $stmt->fetch();
         
+        if ($memberCar) {
+            logApiCall('check_car_number', null, "Found member car: " . $memberCar['reg_number']);
+        }
+        
         // Поиск среди приглашений
         $stmt = $pdo->prepare('
             SELECT 
-                i.id as invitation_id,
-                i.brand,
-                i.model,
-                i.year,
                 i.car_number,
-                i.status as invitation_status,
-                i.created_at,
-                m.first_name as inviter_first_name,
-                m.last_name as inviter_last_name,
-                m.username as inviter_username
+                i.status as invitation_status
             FROM invitations i
-            LEFT JOIN members m ON i.inviter_id = m.id
             WHERE REPLACE(UPPER(i.car_number), " ", "") LIKE UPPER(?)
               AND i.status IN ("новое", "на связи", "встреча назначена", "вступил в клуб")
             LIMIT 1
         ');
         $stmt->execute(['%' . $regNumber . '%']);
         $invitation = $stmt->fetch();
+        
+        if ($invitation) {
+            logApiCall('check_car_number', null, "Found invitation: " . $invitation['car_number']);
+        }
         
         $result = [
             'found' => false,
