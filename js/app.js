@@ -2717,9 +2717,9 @@ class CabrioRideApp {
                 submitBtn.disabled = true;
                 this.showCheckResult('Проверка...', 'loading');
                 try {
-                    const found = await this.checkCarNumber(value);
-                    if (found) {
-                        this.showCheckResult('✅ Найдены совпадения в базе клуба!', 'found');
+                    const result = await this.checkCarNumber(value);
+                    if (result.found) {
+                        this.showDetailedCheckResult(result);
                     } else {
                         this.showCheckResult('❌ Совпадений не найдено', 'not-found');
                     }
@@ -2747,6 +2747,113 @@ class CabrioRideApp {
         }
     }
 
+    showDetailedCheckResult(result) {
+        const resultElement = document.getElementById('check-number-result');
+        if (!resultElement) return;
+
+        let html = '';
+        
+        if (result.type === 'member') {
+            const car = result.data.car;
+            const member = result.data.member;
+            
+            html = `
+                <div class="check-result found">
+                    <div class="result-header">
+                        <span class="result-icon">✅</span>
+                        <span class="result-title">Машина участника клуба</span>
+                    </div>
+                    <div class="result-details">
+                        <div class="car-info">
+                            <div class="car-main">
+                                <strong>${car.brand} ${car.model}</strong>
+                                <span class="car-year">${car.year}</span>
+                            </div>
+                            <div class="car-details">
+                                <span class="car-number">${car.reg_number}</span>
+                                ${car.color ? `<span class="car-color">${car.color}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="member-info">
+                            <div class="member-name">
+                                <strong>${member.first_name} ${member.last_name || ''}</strong>
+                                ${member.username ? `<span class="member-username">@${member.username}</span>` : ''}
+                            </div>
+                            <div class="member-status">
+                                <span class="status-badge status-${member.status}">${this.getStatusDisplayName(member.status)}</span>
+                                ${member.city ? `<span class="member-city">${member.city}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (result.type === 'invitation') {
+            const invitation = result.data.invitation;
+            const inviter = result.data.inviter;
+            
+            html = `
+                <div class="check-result invitation">
+                    <div class="result-header">
+                        <span class="result-icon">📨</span>
+                        <span class="result-title">Приглашение в клуб</span>
+                    </div>
+                    <div class="result-details">
+                        <div class="car-info">
+                            <div class="car-main">
+                                <strong>${invitation.brand} ${invitation.model}</strong>
+                                <span class="car-year">${invitation.year}</span>
+                            </div>
+                            <div class="car-details">
+                                <span class="car-number">${invitation.car_number}</span>
+                            </div>
+                        </div>
+                        <div class="invitation-info">
+                            <div class="invitation-status">
+                                <span class="status-badge status-${invitation.status}">${this.getInvitationStatusDisplayName(invitation.status)}</span>
+                            </div>
+                            ${inviter.first_name ? `
+                                <div class="inviter-info">
+                                    <span>Пригласил: ${inviter.first_name} ${inviter.last_name || ''}</span>
+                                    ${inviter.username ? `<span class="inviter-username">@${inviter.username}</span>` : ''}
+                                </div>
+                            ` : ''}
+                            <div class="invitation-date">
+                                <span>Создано: ${this.formatDate(invitation.created_at)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        resultElement.innerHTML = html;
+        resultElement.className = 'check-result detailed';
+    }
+
+    getStatusDisplayName(status) {
+        const statusMap = {
+            'активный': 'Активный участник',
+            'участник': 'Участник',
+            'новый': 'Новый участник',
+            'без авто': 'Без автомобиля',
+            'приглашение': 'Приглашён',
+            'вышел': 'Покинул клуб',
+            'заблокирован': 'Заблокирован'
+        };
+        return statusMap[status] || status;
+    }
+
+    getInvitationStatusDisplayName(status) {
+        const statusMap = {
+            'новое': 'Новое приглашение',
+            'на связи': 'На связи',
+            'встреча назначена': 'Встреча назначена',
+            'вступил в клуб': 'Вступил в клуб',
+            'отклонено': 'Отклонено'
+        };
+        return statusMap[status] || status;
+    }
+
     async checkCarNumber(number) {
         // Запрос к API
         const apiUrl = this.getApiUrl('check_car_number');
@@ -2756,8 +2863,8 @@ class CabrioRideApp {
             body: JSON.stringify({ reg_number: number })
         });
         const result = await response.json();
-        if (result.success && result.data && typeof result.data.found !== 'undefined') {
-            return !!result.data.found;
+        if (result.success && result.data) {
+            return result.data;
         }
         throw new Error('Ошибка API');
     }

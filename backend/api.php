@@ -1195,14 +1195,28 @@ function handleCheckCarNumberRequest() {
     $pdo = getDbConnection();
     $input = json_decode(file_get_contents('php://input'), true);
     $regNumber = trim($input['reg_number'] ?? '');
+    
     // Валидация: только латиница и цифры, минимум 3 символа
     if (!preg_match('/^[A-Za-z0-9]{3,}$/', $regNumber)) {
-        sendSuccess(['found' => false]);
+        sendSuccess(['found' => false, 'message' => 'Неверный формат номера']);
     }
+    
     try {
-        // Поиск среди машин с нужными статусами владельца (частичное совпадение)
+        // Поиск среди машин участников клуба
         $stmt = $pdo->prepare('
-            SELECT c.id
+            SELECT 
+                c.id as car_id,
+                c.brand,
+                c.model,
+                c.year,
+                c.reg_number,
+                c.color,
+                m.id as member_id,
+                m.first_name,
+                m.last_name,
+                m.username,
+                m.status as member_status,
+                m.city
             FROM cars c
             JOIN members m ON c.member_id = m.id
             WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
@@ -1210,11 +1224,86 @@ function handleCheckCarNumberRequest() {
             LIMIT 1
         ');
         $stmt->execute(['%' . $regNumber . '%']);
-        $found = $stmt->fetch() ? true : false;
-        sendSuccess(['found' => $found]);
+        $memberCar = $stmt->fetch();
+        
+        // Поиск среди приглашений
+        $stmt = $pdo->prepare('
+            SELECT 
+                i.id as invitation_id,
+                i.brand,
+                i.model,
+                i.year,
+                i.car_number,
+                i.status as invitation_status,
+                i.created_at,
+                m.first_name as inviter_first_name,
+                m.last_name as inviter_last_name,
+                m.username as inviter_username
+            FROM invitations i
+            LEFT JOIN members m ON i.inviter_id = m.id
+            WHERE REPLACE(UPPER(i.car_number), " ", "") LIKE UPPER(?)
+              AND i.status IN ("новое", "на связи", "встреча назначена", "вступил в клуб")
+            LIMIT 1
+        ');
+        $stmt->execute(['%' . $regNumber . '%']);
+        $invitation = $stmt->fetch();
+        
+        $result = [
+            'found' => false,
+            'type' => null,
+            'data' => null,
+            'message' => 'Совпадений не найдено'
+        ];
+        
+        if ($memberCar) {
+            $result['found'] = true;
+            $result['type'] = 'member';
+            $result['data'] = [
+                'car' => [
+                    'id' => $memberCar['car_id'],
+                    'brand' => $memberCar['brand'],
+                    'model' => $memberCar['model'],
+                    'year' => $memberCar['year'],
+                    'reg_number' => $memberCar['reg_number'],
+                    'color' => $memberCar['color']
+                ],
+                'member' => [
+                    'id' => $memberCar['member_id'],
+                    'first_name' => $memberCar['first_name'],
+                    'last_name' => $memberCar['last_name'],
+                    'username' => $memberCar['username'],
+                    'status' => $memberCar['member_status'],
+                    'city' => $memberCar['city']
+                ]
+            ];
+            $result['message'] = '✅ Найдена машина участника клуба';
+        } elseif ($invitation) {
+            $result['found'] = true;
+            $result['type'] = 'invitation';
+            $result['data'] = [
+                'invitation' => [
+                    'id' => $invitation['invitation_id'],
+                    'brand' => $invitation['brand'],
+                    'model' => $invitation['model'],
+                    'year' => $invitation['year'],
+                    'car_number' => $invitation['car_number'],
+                    'status' => $invitation['invitation_status'],
+                    'created_at' => $invitation['created_at']
+                ],
+                'inviter' => [
+                    'first_name' => $invitation['inviter_first_name'],
+                    'last_name' => $invitation['inviter_last_name'],
+                    'username' => $invitation['inviter_username']
+                ]
+            ];
+            $result['message'] = '📨 Найдено приглашение в клуб';
+        }
+        
+        sendSuccess($result);
+        
     } catch (PDOException $e) {
         error_log("Check car number error: " . $e->getMessage());
-        sendError('DB error');
+        sendError('Ошибка базы данных');
     }
 }
 ?>
