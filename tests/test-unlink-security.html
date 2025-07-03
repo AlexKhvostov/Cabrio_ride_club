@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Тест безопасности отвязки аккаунта</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .danger-button {
+            background: #f44336;
+        }
+        .danger-button:hover {
+            background: #da190b;
+        }
+        .info-button {
+            background: #2196F3;
+        }
+        .info-button:hover {
+            background: #0b7dda;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        .warning {
+            border-left-color: #ff9800;
+        }
+        .success {
+            border-left-color: #4CAF50;
+        }
+        .step {
+            background: #3a3a3a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #2196F3;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Тест безопасности отвязки аккаунта</h1>
+    
+    <div class="test-section">
+        <div class="test-title">🎯 Цель теста</div>
+        <div class="test-description">
+            Проверить, что после отвязки аккаунта пользователь НЕ может войти автоматически 
+            и ОБЯЗАТЕЛЬНО должен пройти повторную авторизацию через Telegram.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📋 Шаги тестирования</div>
+        
+        <div class="step">
+            <div class="step-number">Шаг 1:</div>
+            <div>Проверить текущее состояние авторизации</div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">Шаг 2:</div>
+            <div>Отвязать аккаунт через кнопку "Отвязать аккаунт"</div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">Шаг 3:</div>
+            <div>Попытаться войти автоматически (должно быть заблокировано)</div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">Шаг 4:</div>
+            <div>Проверить, что флаг безопасности установлен</div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">Шаг 5:</div>
+            <div>Проверить, что только авторизация через Telegram работает</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">🔧 Инструменты тестирования</div>
+        
+        <button class="test-button" onclick="checkCurrentAuth()">🔍 Проверить текущую авторизацию</button>
+        <button class="test-button" onclick="checkSecurityFlag()">🔒 Проверить флаг безопасности</button>
+        <button class="test-button" onclick="simulateUnlink()">🔗 Симулировать отвязку аккаунта</button>
+        <button class="test-button" onclick="clearSecurityFlag()">🧹 Очистить флаг безопасности</button>
+        <button class="test-button" onclick="testAutoAuth()">🚫 Тест автоматической авторизации</button>
+        <button class="test-button" onclick="clearAllData()">🗑️ Очистить все данные</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📊 Результаты тестирования</div>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong><br>
+                ${message}
+            `;
+            results.appendChild(resultDiv);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function addTestResult(testName, status, details) {
+            const testResults = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${status}`;
+            resultDiv.innerHTML = `
+                <strong>${testName}</strong><br>
+                Статус: ${status === 'success' ? '✅ УСПЕХ' : status === 'error' ? '❌ ОШИБКА' : '⚠️ ПРЕДУПРЕЖДЕНИЕ'}<br>
+                ${details}
+            `;
+            testResults.appendChild(resultDiv);
+        }
+
+        function checkCurrentAuth() {
+            showResult('🔍 Проверяем текущую авторизацию...', 'info');
+            
+            const storedUser = localStorage.getItem('cabrioride_user');
+            const forceAuth = localStorage.getItem('force_telegram_auth');
+            
+            let details = '';
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    details += `Пользователь: ${user.first_name} ${user.last_name}<br>`;
+                    details += `ID: ${user.id}<br>`;
+                } catch (e) {
+                    details += 'Ошибка парсинга данных пользователя<br>';
+                }
+            } else {
+                details += 'Пользователь не найден<br>';
+            }
+            
+            if (forceAuth === 'true') {
+                details += '🔒 Флаг принудительной авторизации: УСТАНОВЛЕН<br>';
+            } else {
+                details += '🔓 Флаг принудительной авторизации: НЕ УСТАНОВЛЕН<br>';
+            }
+            
+            showResult(details, storedUser ? 'warning' : 'info');
+        }
+
+        function checkSecurityFlag() {
+            showResult('🔒 Проверяем флаг безопасности...', 'info');
+            
+            const forceAuth = localStorage.getItem('force_telegram_auth');
+            const authTimestamp = localStorage.getItem('auth_timestamp');
+            
+            let details = '';
+            details += `Флаг force_telegram_auth: ${forceAuth || 'не установлен'}<br>`;
+            details += `Время авторизации: ${authTimestamp ? new Date(parseInt(authTimestamp)).toLocaleString() : 'не установлено'}<br>`;
+            
+            if (forceAuth === 'true') {
+                showResult(details + '🔒 Безопасность: АКТИВНА - автоматическая авторизация заблокирована', 'success');
+                addTestResult('Проверка флага безопасности', 'success', 'Флаг безопасности установлен корректно');
+            } else {
+                showResult(details + '⚠️ Безопасность: НЕ АКТИВНА - возможна автоматическая авторизация', 'warning');
+                addTestResult('Проверка флага безопасности', 'warning', 'Флаг безопасности не установлен');
+            }
+        }
+
+        function simulateUnlink() {
+            showResult('🔗 Симулируем отвязку аккаунта...', 'info');
+            
+            // Устанавливаем флаг принудительной авторизации
+            localStorage.setItem('force_telegram_auth', 'true');
+            
+            // Очищаем данные пользователя (но оставляем флаг)
+            const keysToRemove = [
+                'cabrioride_user',
+                'telegram_user',
+                'auth_token',
+                'auth_method',
+                'user_verified',
+                'auth_fallback',
+                'auth_timestamp',
+                'telegram_auth_data',
+                'user_session',
+                'app_state'
+            ];
+            
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+            });
+            
+            sessionStorage.clear();
+            
+            showResult('✅ Отвязка аккаунта симулирована. Флаг безопасности установлен.', 'success');
+            addTestResult('Симуляция отвязки аккаунта', 'success', 'Аккаунт отвязан, флаг безопасности установлен');
+            
+            // Проверяем результат
+            setTimeout(() => {
+                checkSecurityFlag();
+            }, 500);
+        }
+
+        function clearSecurityFlag() {
+            showResult('🧹 Очищаем флаг безопасности...', 'info');
+            
+            localStorage.removeItem('force_telegram_auth');
+            
+            showResult('✅ Флаг безопасности очищен. Автоматическая авторизация разрешена.', 'warning');
+            addTestResult('Очистка флага безопасности', 'warning', 'Флаг безопасности снят - это может быть небезопасно');
+        }
+
+        function testAutoAuth() {
+            showResult('🚫 Тестируем автоматическую авторизацию...', 'info');
+            
+            const forceAuth = localStorage.getItem('force_telegram_auth');
+            
+            if (forceAuth === 'true') {
+                showResult('🔒 БЛОКИРОВАНО: Автоматическая авторизация заблокирована флагом безопасности', 'success');
+                addTestResult('Тест автоматической авторизации', 'success', 'Авторизация корректно заблокирована');
+            } else {
+                showResult('⚠️ РАЗРЕШЕНО: Автоматическая авторизация возможна (небезопасно после отвязки)', 'error');
+                addTestResult('Тест автоматической авторизации', 'error', 'Авторизация не заблокирована - проблема безопасности');
+            }
+        }
+
+        function clearAllData() {
+            showResult('🗑️ Очищаем все данные...', 'info');
+            
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Очищаем куки
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            showResult('✅ Все данные очищены. Приложение готово к чистому тестированию.', 'info');
+            addTestResult('Очистка всех данных', 'success', 'Все данные успешно очищены');
+        }
+
+        // Автоматическая проверка при загрузке
+        window.addEventListener('load', function() {
+            showResult('🚀 Тест безопасности отвязки аккаунта загружен', 'info');
+            checkCurrentAuth();
+        });
+    </script>
+</body>
+</html> 
