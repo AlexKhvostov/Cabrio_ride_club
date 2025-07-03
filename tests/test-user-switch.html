@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Тест смены пользователя CabrioRide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-section h3 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .test-section p {
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .user-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .user-info h4 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        
+        .user-detail {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .user-detail .label {
+            color: #888;
+            font-weight: 500;
+        }
+        
+        .user-detail .value {
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #0077cc, #0055aa);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
+        }
+        
+        .test-btn.success {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+        }
+        
+        .test-btn.warning {
+            background: linear-gradient(135deg, #ffaa00, #cc8800);
+        }
+        
+        .test-btn.danger {
+            background: linear-gradient(135deg, #ff3366, #cc2244);
+        }
+        
+        .log-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .log-section h4 {
+            color: #00ff88;
+            margin-bottom: 15px;
+        }
+        
+        .log-content {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #ccc;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .clear-log {
+            background: #ff3366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .clear-log:hover {
+            background: #cc2244;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.success {
+            background: #00ff88;
+        }
+        
+        .status-indicator.error {
+            background: #ff3366;
+        }
+        
+        .status-indicator.warning {
+            background: #ffaa00;
+        }
+        
+        @media (max-width: 768px) {
+            .test-buttons {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Тест смены пользователя</h1>
+            <p>Проверка корректной работы при смене аккаунта в Telegram</p>
+        </div>
+
+        <!-- Текущий пользователь -->
+        <div class="test-section">
+            <h3>👤 Текущий пользователь</h3>
+            <div class="user-info" id="current-user-info">
+                <h4>Загрузка данных пользователя...</h4>
+            </div>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="checkCurrentUser()">🔄 Обновить данные</button>
+                <button class="test-btn warning" onclick="clearUserData()">🗑️ Очистить данные</button>
+                <button class="test-btn danger" onclick="forceReload()">🔄 Принудительная перезагрузка</button>
+            </div>
+        </div>
+
+        <!-- Тест смены пользователя -->
+        <div class="test-section">
+            <h3>🔄 Тест смены пользователя</h3>
+            <p>Симуляция смены пользователя в Telegram для проверки корректной очистки данных</p>
+            
+            <div class="test-buttons">
+                <button class="test-btn" onclick="simulateUserSwitch()">🔄 Симулировать смену пользователя</button>
+                <button class="test-btn warning" onclick="testDifferentUsers()">👥 Тест разных пользователей</button>
+                <button class="test-btn" onclick="testAuthFlow()">🔐 Тест полного цикла авторизации</button>
+            </div>
+        </div>
+
+        <!-- Проверка localStorage -->
+        <div class="test-section">
+            <h3>💾 Проверка localStorage</h3>
+            <p>Проверка сохраненных данных в браузере</p>
+            
+            <div class="user-info" id="localstorage-info">
+                <h4>Загрузка данных localStorage...</h4>
+            </div>
+            
+            <div class="test-buttons">
+                <button class="test-btn" onclick="checkLocalStorage()">🔍 Проверить localStorage</button>
+                <button class="test-btn warning" onclick="clearLocalStorage()">🗑️ Очистить localStorage</button>
+                <button class="test-btn" onclick="exportUserData()">📤 Экспорт данных</button>
+            </div>
+        </div>
+
+        <!-- Инструкции -->
+        <div class="test-section">
+            <h3>📋 Инструкции по тестированию</h3>
+            <div class="user-info">
+                <h4>Как протестировать смену пользователя:</h4>
+                <ol style="color: #ccc; line-height: 1.8; padding-left: 20px;">
+                    <li><strong>Авторизуйтесь</strong> под первым пользователем через Telegram</li>
+                    <li><strong>Проверьте</strong> что данные отображаются корректно</li>
+                    <li><strong>В Telegram</strong> смените аккаунт на другой</li>
+                    <li><strong>На сайте</strong> нажмите "Войти через Telegram"</li>
+                    <li><strong>Проверьте</strong> что данные обновились на нового пользователя</li>
+                    <li><strong>Используйте кнопки</strong> ниже для диагностики</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Лог тестирования -->
+        <div class="log-section">
+            <h4>📝 Лог тестирования</h4>
+            <div class="log-content" id="test-log">Нажмите кнопки выше для начала тестирования...</div>
+            <button class="clear-log" onclick="clearLog()">Очистить лог</button>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let testLog = [];
+        
+        // Функции логирования
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            testLog.push(logEntry);
+            updateLogDisplay();
+            console.log(logEntry);
+        }
+        
+        function updateLogDisplay() {
+            const logElement = document.getElementById('test-log');
+            logElement.textContent = testLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            testLog = [];
+            updateLogDisplay();
+        }
+        
+        // Проверка текущего пользователя
+        function checkCurrentUser() {
+            log('🔍 Проверка текущего пользователя...');
+            
+            try {
+                // Проверяем localStorage
+                const storedUser = localStorage.getItem('cabrioride_user');
+                const authTimestamp = localStorage.getItem('auth_timestamp');
+                const currentUserId = localStorage.getItem('current_user_id');
+                
+                const userInfoElement = document.getElementById('current-user-info');
+                
+                if (storedUser) {
+                    const user = JSON.parse(storedUser);
+                    const authTime = authTimestamp ? new Date(parseInt(authTimestamp)).toLocaleString() : 'Неизвестно';
+                    
+                    userInfoElement.innerHTML = `
+                        <h4><span class="status-indicator success"></span>Пользователь найден</h4>
+                        <div class="user-detail">
+                            <span class="label">ID:</span>
+                            <span class="value">${user.id}</span>
+                        </div>
+                        <div class="user-detail">
+                            <span class="label">Имя:</span>
+                            <span class="value">${user.first_name} ${user.last_name || ''}</span>
+                        </div>
+                        <div class="user-detail">
+                            <span class="label">Username:</span>
+                            <span class="value">@${user.username || 'не указан'}</span>
+                        </div>
+                        <div class="user-detail">
+                            <span class="label">Время авторизации:</span>
+                            <span class="value">${authTime}</span>
+                        </div>
+                        <div class="user-detail">
+                            <span class="label">Текущий ID:</span>
+                            <span class="value">${currentUserId || 'не сохранен'}</span>
+                        </div>
+                    `;
+                    
+                    log(`✅ Пользователь: ${user.first_name} (ID: ${user.id})`);
+                } else {
+                    userInfoElement.innerHTML = `
+                        <h4><span class="status-indicator error"></span>Пользователь не найден</h4>
+                        <p>Данные пользователя отсутствуют в localStorage</p>
+                    `;
+                    log('❌ Пользователь не найден в localStorage');
+                }
+            } catch (error) {
+                log(`❌ Ошибка при проверке пользователя: ${error.message}`, 'error');
+            }
+        }
+        
+        // Очистка данных пользователя
+        function clearUserData() {
+            log('🧹 Очистка данных пользователя...');
+            
+            try {
+                const keysToRemove = [
+                    'cabrioride_user',
+                    'telegram_user',
+                    'auth_token',
+                    'auth_method',
+                    'user_verified',
+                    'auth_fallback',
+                    'auth_timestamp',
+                    'current_user_id',
+                    'telegram_auth_data',
+                    'user_session',
+                    'app_state'
+                ];
+                
+                keysToRemove.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        log(`🗑️ Удален ключ: ${key}`);
+                    }
+                });
+                
+                sessionStorage.clear();
+                log('🗑️ SessionStorage очищен');
+                
+                log('✅ Данные пользователя очищены');
+                checkCurrentUser();
+                checkLocalStorage();
+            } catch (error) {
+                log(`❌ Ошибка при очистке: ${error.message}`, 'error');
+            }
+        }
+        
+        // Принудительная перезагрузка
+        function forceReload() {
+            log('🔄 Принудительная перезагрузка страницы...');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+        
+        // Симуляция смены пользователя
+        function simulateUserSwitch() {
+            log('🔄 Симуляция смены пользователя...');
+            
+            try {
+                const oldUser = localStorage.getItem('cabrioride_user');
+                if (oldUser) {
+                    const user = JSON.parse(oldUser);
+                    log(`📋 Старый пользователь: ${user.first_name} (ID: ${user.id})`);
+                }
+                
+                // Создаем нового пользователя
+                const newUser = {
+                    id: Math.floor(Math.random() * 1000000000),
+                    first_name: 'Новый',
+                    last_name: 'Пользователь',
+                    username: 'newuser' + Math.floor(Math.random() * 1000),
+                    photo_url: null,
+                    auth_date: Math.floor(Date.now() / 1000)
+                };
+                
+                // Сохраняем нового пользователя
+                localStorage.setItem('cabrioride_user', JSON.stringify(newUser));
+                localStorage.setItem('auth_timestamp', Date.now().toString());
+                localStorage.setItem('current_user_id', newUser.id.toString());
+                localStorage.setItem('auth_method', 'telegram_widget');
+                localStorage.setItem('user_verified', 'true');
+                
+                log(`✅ Новый пользователь создан: ${newUser.first_name} (ID: ${newUser.id})`);
+                log('🔄 Данные обновлены, проверьте результат');
+                
+                checkCurrentUser();
+                checkLocalStorage();
+            } catch (error) {
+                log(`❌ Ошибка при симуляции: ${error.message}`, 'error');
+            }
+        }
+        
+        // Тест разных пользователей
+        function testDifferentUsers() {
+            log('👥 Тест разных пользователей...');
+            
+            const testUsers = [
+                {
+                    id: 123456789,
+                    first_name: 'Алексей',
+                    last_name: 'Петров',
+                    username: 'alex_petrov'
+                },
+                {
+                    id: 987654321,
+                    first_name: 'Мария',
+                    last_name: 'Иванова',
+                    username: 'maria_ivanova'
+                },
+                {
+                    id: 555666777,
+                    first_name: 'Дмитрий',
+                    last_name: 'Сидоров',
+                    username: 'dmitry_sidorov'
+                }
+            ];
+            
+            testUsers.forEach((user, index) => {
+                setTimeout(() => {
+                    log(`🔄 Тест пользователя ${index + 1}: ${user.first_name} (ID: ${user.id})`);
+                    
+                    localStorage.setItem('cabrioride_user', JSON.stringify(user));
+                    localStorage.setItem('auth_timestamp', Date.now().toString());
+                    localStorage.setItem('current_user_id', user.id.toString());
+                    
+                    checkCurrentUser();
+                }, index * 2000);
+            });
+        }
+        
+        // Тест полного цикла авторизации
+        function testAuthFlow() {
+            log('🔐 Тест полного цикла авторизации...');
+            
+            // Шаг 1: Очистка
+            log('1️⃣ Очищаем данные...');
+            clearUserData();
+            
+            setTimeout(() => {
+                // Шаг 2: Создание пользователя
+                log('2️⃣ Создаем тестового пользователя...');
+                const testUser = {
+                    id: 999888777,
+                    first_name: 'Тестовый',
+                    last_name: 'Пользователь',
+                    username: 'test_user',
+                    photo_url: null,
+                    auth_date: Math.floor(Date.now() / 1000)
+                };
+                
+                localStorage.setItem('cabrioride_user', JSON.stringify(testUser));
+                localStorage.setItem('auth_timestamp', Date.now().toString());
+                localStorage.setItem('current_user_id', testUser.id.toString());
+                localStorage.setItem('auth_method', 'telegram_widget');
+                localStorage.setItem('user_verified', 'true');
+                
+                log(`✅ Пользователь создан: ${testUser.first_name}`);
+                
+                setTimeout(() => {
+                    // Шаг 3: Проверка
+                    log('3️⃣ Проверяем результат...');
+                    checkCurrentUser();
+                    checkLocalStorage();
+                    
+                    log('✅ Тест полного цикла завершен');
+                }, 1000);
+            }, 1000);
+        }
+        
+        // Проверка localStorage
+        function checkLocalStorage() {
+            log('💾 Проверка localStorage...');
+            
+            try {
+                const relevantKeys = [
+                    'cabrioride_user',
+                    'auth_timestamp',
+                    'current_user_id',
+                    'auth_method',
+                    'user_verified',
+                    'auth_token',
+                    'telegram_user'
+                ];
+                
+                const storageInfo = {};
+                
+                relevantKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    if (value) {
+                        storageInfo[key] = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    }
+                });
+                
+                const storageElement = document.getElementById('localstorage-info');
+                
+                if (Object.keys(storageInfo).length > 0) {
+                    let html = '<h4><span class="status-indicator success"></span>Данные найдены</h4>';
+                    
+                    Object.entries(storageInfo).forEach(([key, value]) => {
+                        html += `
+                            <div class="user-detail">
+                                <span class="label">${key}:</span>
+                                <span class="value">${value}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    storageElement.innerHTML = html;
+                    log(`✅ Найдено ${Object.keys(storageInfo).length} ключей в localStorage`);
+                } else {
+                    storageElement.innerHTML = `
+                        <h4><span class="status-indicator error"></span>Данные не найдены</h4>
+                        <p>localStorage пуст или не содержит релевантных данных</p>
+                    `;
+                    log('❌ Данные в localStorage не найдены');
+                }
+            } catch (error) {
+                log(`❌ Ошибка при проверке localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        // Очистка localStorage
+        function clearLocalStorage() {
+            log('🗑️ Очистка localStorage...');
+            
+            try {
+                localStorage.clear();
+                log('✅ localStorage полностью очищен');
+                checkLocalStorage();
+                checkCurrentUser();
+            } catch (error) {
+                log(`❌ Ошибка при очистке localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        // Экспорт данных пользователя
+        function exportUserData() {
+            log('📤 Экспорт данных пользователя...');
+            
+            try {
+                const userData = {
+                    timestamp: new Date().toISOString(),
+                    localStorage: {},
+                    sessionStorage: {}
+                };
+                
+                // Экспортируем все данные localStorage
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key) {
+                        userData.localStorage[key] = localStorage.getItem(key);
+                    }
+                }
+                
+                // Экспортируем все данные sessionStorage
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key) {
+                        userData.sessionStorage[key] = sessionStorage.getItem(key);
+                    }
+                }
+                
+                const dataStr = JSON.stringify(userData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `user-data-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                link.click();
+                
+                URL.revokeObjectURL(url);
+                
+                log('✅ Данные экспортированы в файл');
+            } catch (error) {
+                log(`❌ Ошибка при экспорте: ${error.message}`, 'error');
+            }
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Инициализация теста смены пользователя...');
+            checkCurrentUser();
+            checkLocalStorage();
+        });
+    </script>
+</body>
+</html> 

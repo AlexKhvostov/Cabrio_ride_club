@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация - CabrioRide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+        
+        .logo {
+            width: 200px;
+            height: 67px;
+            background: #000000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            border: 1px solid #333;
+            padding: 8px;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+        
+        .status.loading {
+            background: rgba(0, 153, 255, 0.2);
+            color: #0099ff;
+            border: 1px solid #0099ff;
+        }
+        
+        .status.success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .status.error {
+            background: rgba(255, 51, 102, 0.2);
+            color: #ff3366;
+            border: 1px solid #ff3366;
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #333;
+            border-top: 2px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+            transition: all 0.2s ease;
+        }
+        
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+        }
+        
+        .button.secondary {
+            background: #333;
+            color: #fff;
+        }
+        
+        .debug-info {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .debug-info h4 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 20px;
+            }
+            
+            .logo {
+                width: 150px;
+                height: 50px;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <img src="logo.png" alt="CabrioRide">
+        </div>
+        
+        <h1 class="title">CabrioRide</h1>
+        <p class="subtitle">Авторизация через Telegram</p>
+        
+        <div id="status" class="status loading">
+            <span class="spinner"></span>
+            Проверка авторизации...
+        </div>
+        
+        <div id="actions" style="display: none;">
+            <a href="index.html" class="button">Перейти к сайту</a>
+        </div>
+        
+        <!-- Отладочная информация показывается только при ошибках -->
+        <div id="debug-info" class="debug-info" style="display: none;">
+            <h4>Информация для отладки:</h4>
+            <p><strong>User ID:</strong> <span id="debug-user-id">-</span></p>
+            <p><strong>Timestamp:</strong> <span id="debug-timestamp">-</span></p>
+            <p><strong>Hash:</strong> <span id="debug-hash">-</span></p>
+            <p><strong>URL:</strong> <span id="debug-url">-</span></p>
+        </div>
+    </div>
+    
+    <script>
+        // Получаем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id') || urlParams.get('id');
+        const timestamp = urlParams.get('timestamp') || urlParams.get('auth_date');
+        const hash = urlParams.get('hash');
+        
+        // Заполняем отладочную информацию
+        document.getElementById('debug-user-id').textContent = userId || 'не найден';
+        document.getElementById('debug-timestamp').textContent = timestamp || 'не найден';
+        document.getElementById('debug-hash').textContent = hash || 'не найден';
+        document.getElementById('debug-url').textContent = window.location.href;
+        
+        const statusEl = document.getElementById('status');
+        const actionsEl = document.getElementById('actions');
+        const debugEl = document.getElementById('debug-info');
+        
+        // Функция для обновления статуса
+        function updateStatus(type, message) {
+            statusEl.className = `status ${type}`;
+            statusEl.innerHTML = type === 'loading' ? 
+                `<span class="spinner"></span>${message}` : 
+                message;
+        }
+        
+        // Функция для показа результата
+        function showResult(success, message) {
+            updateStatus(success ? 'success' : 'error', message);
+            actionsEl.style.display = 'block';
+            
+            // Показываем отладочную информацию только при ошибках
+            if (!success) {
+                debugEl.style.display = 'block';
+            }
+        }
+        
+        // Проверяем наличие необходимых параметров
+        if (!userId || !timestamp || !hash) {
+            showResult(false, '❌ Отсутствуют необходимые параметры авторизации');
+        } else {
+            // Проверяем время жизни ссылки (10 минут для мобильных)
+            const currentTime = Math.floor(Date.now() / 1000);
+            const authTime = parseInt(timestamp);
+            const timeDiff = currentTime - authTime;
+            
+            if (timeDiff > 600) { // 10 минут
+                showResult(false, '❌ Ссылка авторизации устарела (более 10 минут)');
+            } else {
+                // Создаем данные пользователя для авторизации
+                const userData = {
+                    id: userId,
+                    first_name: 'Пользователь',
+                    last_name: '',
+                    username: '',
+                    auth_date: timestamp,
+                    hash: hash
+                };
+                
+                updateStatus('loading', 'Проверка участника клуба...');
+                
+                // Автоматически определяем URL в зависимости от режима разработки
+                const isDevelopment = window.location.hostname === 'localhost' || 
+                                     window.location.hostname === '127.0.0.1' ||
+                                     window.location.protocol === 'file:';
+                
+                const authUrl = isDevelopment 
+                    ? `https://club.cabrioride.by/backend/auth-callback.php?id=${userId}&timestamp=${timestamp}&hash=${hash}`
+                    : `backend/auth-callback.php?id=${userId}&timestamp=${timestamp}&hash=${hash}`;
+                
+                // Проверяем пользователя в базе данных через простой GET запрос
+                fetch(authUrl, {
+                    redirect: 'manual' // Не следуем автоматически за редиректами
+                })
+                    .then(response => {
+                        // Если это редирект на index.html - значит авторизация успешна
+                        if (response.type === 'opaqueredirect' || 
+                            (response.status >= 300 && response.status < 400)) {
+                            
+                            // Проверяем куда редирект
+                            const location = response.headers.get('Location') || '';
+                            if (location.includes('index.html') && !location.includes('error=')) {
+                                return { success: true, redirected: true };
+                            } else {
+                                // Редирект с ошибкой
+                                throw new Error('Пользователь не найден или доступ запрещен');
+                            }
+                        }
+                        
+                        // Если обычный ответ - проверяем содержимое
+                        if (response.ok) {
+                            return response.text().then(text => {
+                                // Если это HTML страница с ошибкой
+                                if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                                    throw new Error('Пользователь не найден в базе данных');
+                                }
+                                // Если это JSON
+                                try {
+                                    return JSON.parse(text);
+                                } catch (e) {
+                                    return { success: true };
+                                }
+                            });
+                        }
+                        
+                        throw new Error('Ошибка проверки пользователя');
+                    })
+                    .then(data => {
+                        if (data.success || data.redirected) {
+                            // Пользователь найден в базе данных и имеет доступ
+                            localStorage.setItem('telegram_user', JSON.stringify(userData));
+                            localStorage.setItem('auth_token', 'mobile_auth_' + userId + '_' + timestamp);
+                            localStorage.setItem('auth_method', 'mobile_link');
+                            localStorage.setItem('user_verified', 'true');
+                            
+                            updateStatus('loading', 'Авторизация успешна! Переход на сайт...');
+                            
+                            // Простой переход через 1 секунду
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 1000);
+                        } else if (data.need_activation) {
+                            // Пользователь найден, но нужна активация
+                            showResult(false, `❌ ${data.error || 'Доступ ограничен'}<br><br>
+                                <strong>Привет, ${data.user_name || 'участник'}!</strong><br>
+                                ${data.error}<br><br>
+                                <small>Обратитесь к администратору клуба для изменения статуса.</small>`);
+                        } else {
+                            showResult(false, '❌ Пользователь не найден в базе данных клуба');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Auth error:', error);
+                        showResult(false, '❌ Вы не являетесь участником клуба или доступ запрещен');
+                    });
+            }
+        }
+    </script>
+</body>
+</html> 

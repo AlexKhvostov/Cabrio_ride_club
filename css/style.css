@@ -2182,6 +2182,16 @@ select:focus-visible {
     color: var(--text-primary);
 }
 
+.access-denied-content .help-text {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    border-left: 3px solid var(--primary-blue);
+}
+
 .access-denied-actions {
     margin-top: 25px;
 }

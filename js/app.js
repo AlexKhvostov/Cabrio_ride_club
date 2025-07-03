@@ -83,7 +83,27 @@ class CabrioRideApp {
             // Проверяем сохраненного пользователя
             const storedUser = this.getStoredUser();
             if (storedUser) {
-                console.log('Found stored user, verifying access...');
+                console.log('🔍 Найден сохраненный пользователь:', storedUser.first_name);
+                
+                // Проверяем время последней авторизации (24 часа)
+                const authTimestamp = localStorage.getItem('auth_timestamp');
+                if (authTimestamp) {
+                    const authTime = parseInt(authTimestamp);
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - authTime;
+                    const maxAge = 24 * 60 * 60 * 1000; // 24 часа
+                    
+                    if (timeDiff > maxAge) {
+                        console.log('⏰ Данные пользователя устарели (24+ часов), очищаем...');
+                        this.clearStoredUser();
+                        this.showLogin();
+                        return;
+                    } else {
+                        console.log(`✅ Данные пользователя актуальны (${Math.round(timeDiff / 1000 / 60)} минут назад)`);
+                    }
+                }
+                
+                console.log('🔐 Проверяем доступ сохраненного пользователя...');
                 this.showLoading();
                 
                 try {
@@ -94,23 +114,23 @@ class CabrioRideApp {
                     if (response.success && response.data.access) {
                         // Доступ разрешен
                         this.currentUser = storedUser;
-                    await this.showApp();
-                        console.log('Access granted for stored user');
-                } else {
+                        await this.showApp();
+                        console.log('✅ Access granted for stored user');
+                    } else {
                         // Доступ запрещен - статус изменился
-                        console.log('Access denied for stored user, status changed');
+                        console.log('❌ Access denied for stored user, status changed');
                         const status = response.data?.status || 'неизвестный';
                         const message = response.data?.message || 'Ваш статус изменился. Доступ запрещен.';
                         
-                    this.clearStoredUser();
+                        this.clearStoredUser();
                         this.showAccessDenied(status, message);
-                }
-            } catch (error) {
-                    console.error('Error verifying stored user:', error);
-                this.clearStoredUser();
+                    }
+                } catch (error) {
+                    console.error('❌ Error verifying stored user:', error);
+                    this.clearStoredUser();
                     this.showError('Ошибка проверки доступа. Попробуйте авторизоваться заново.');
-                this.showLogin();
-            }
+                    this.showLogin();
+                }
                 
                 this.hideLoading();
         } else {
@@ -144,7 +164,12 @@ class CabrioRideApp {
         // Unlink account button
         const unlinkBtn = document.getElementById('unlink-btn');
         if (unlinkBtn) {
-            unlinkBtn.addEventListener('click', () => this.unlinkAccount());
+            unlinkBtn.addEventListener('click', () => {
+                console.log('🔗 Кнопка отвязки аккаунта нажата');
+                this.unlinkAccount();
+            });
+        } else {
+            console.warn('❌ Кнопка отвязки аккаунта не найдена');
         }
 
         // Add buttons
@@ -492,6 +517,26 @@ class CabrioRideApp {
         this.showLoading();
         
         try {
+            // Проверяем, что получили корректные данные от Telegram
+            if (!telegramUser || !telegramUser.id) {
+                throw new Error('Некорректные данные от Telegram');
+            }
+            
+            // Проверяем, не изменился ли пользователь
+            const storedUser = this.getStoredUser();
+            if (storedUser && storedUser.id !== telegramUser.id) {
+                console.log('🔄 Обнаружена смена пользователя, очищаем старые данные...');
+                console.log('Старый пользователь:', storedUser.id, storedUser.first_name);
+                console.log('Новый пользователь:', telegramUser.id, telegramUser.first_name);
+                
+                // Полная очистка данных предыдущего пользователя
+                this.clearStoredUser();
+                this.currentUser = null;
+                
+                // Показываем уведомление о смене пользователя
+                this.showNotification(`Выполнен вход под пользователем ${telegramUser.first_name}`, 'info');
+            }
+            
             // Обязательная проверка статуса пользователя
             const response = await this.verifyUser(telegramUser);
             console.log('User verification response:', response);
@@ -515,8 +560,20 @@ class CabrioRideApp {
         } catch (error) {
             console.error('❌ Auth error:', error);
             
-            // При ошибке API - НЕ пускаем пользователя
-            this.showError('Ошибка проверки доступа. Попробуйте позже.');
+            // Улучшенная обработка ошибок
+            let errorMessage = 'Ошибка проверки доступа. Попробуйте позже.';
+            
+            if (error.message.includes('HTTP 404')) {
+                errorMessage = 'Сервер недоступен. Проверьте подключение к интернету.';
+            } else if (error.message.includes('HTTP 500')) {
+                errorMessage = 'Ошибка сервера. Попробуйте позже.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Нет подключения к серверу. Проверьте интернет.';
+            } else if (error.message.includes('Некорректные данные')) {
+                errorMessage = 'Ошибка авторизации через Telegram. Попробуйте еще раз.';
+            }
+            
+            this.showError(errorMessage);
             this.clearStoredUser();
             this.showLogin();
         } finally {
@@ -533,17 +590,50 @@ class CabrioRideApp {
     }
 
     unlinkAccount() {
-        if (confirm('Вы уверены, что хотите отвязать аккаунт Telegram?\n\nВам потребуется заново авторизоваться через Telegram для доступа к сайту.')) {
-            console.log('User unlink account - complete logout');
-            // Полная очистка всех данных
-        this.clearStoredUser();
-            this.currentUser = null;
-        this.showLogin();
+        console.log('🔗 Начинаем процесс отвязки аккаунта...');
+        
+        // Проверяем, есть ли активный пользователь
+        if (!this.currentUser) {
+            console.log('❌ Нет активного пользователя для отвязки');
+            this.showError('Нет активного аккаунта для отвязки');
+            return;
+        }
+        
+        const userName = this.currentUser.first_name || 'Пользователь';
+        
+        if (confirm(`Вы уверены, что хотите отвязать аккаунт Telegram (${userName})?\n\nВам потребуется заново авторизоваться через Telegram для доступа к сайту.`)) {
+            console.log('✅ Пользователь подтвердил отвязку аккаунта');
             
-            // Показываем сообщение об успешной отвязке
-            setTimeout(() => {
-                this.showError('Аккаунт успешно отвязан. Для повторного доступа авторизуйтесь через Telegram.', false);
-            }, 100);
+            try {
+                // Полная очистка всех данных
+                this.clearStoredUser();
+                console.log('✅ Данные пользователя очищены');
+                
+                // Очищаем текущего пользователя
+                this.currentUser = null;
+                console.log('✅ Текущий пользователь очищен');
+                
+                // Очищаем sessionStorage
+                sessionStorage.clear();
+                console.log('✅ SessionStorage очищен');
+                
+                // Показываем экран входа
+                this.showLogin();
+                console.log('✅ Показываем экран входа');
+                
+                // Показываем уведомление об успешной отвязке
+                setTimeout(() => {
+                    this.showNotification('Аккаунт успешно отвязан. Для повторного доступа авторизуйтесь через Telegram.', 'success');
+                }, 500);
+                
+                console.log('✅ Процесс отвязки аккаунта завершен');
+                
+            } catch (error) {
+                console.error('❌ Ошибка при отвязке аккаунта:', error);
+                this.showError('Ошибка при отвязке аккаунта. Попробуйте еще раз.');
+            }
+        } else {
+            console.log('❌ Пользователь отменил отвязку аккаунта');
         }
     }
 
@@ -1853,11 +1943,32 @@ class CabrioRideApp {
     // Storage Methods
     storeUser(user) {
         try {
+            console.log('💾 Сохраняем данные пользователя:', user);
+            
+            // Сохраняем основные данные пользователя
             localStorage.setItem('cabrioride_user', JSON.stringify(user));
-            localStorage.setItem('auth_timestamp', Date.now().toString());
-            console.log('User stored successfully:', user);
+            
+            // Сохраняем время авторизации
+            const authTimestamp = Date.now().toString();
+            localStorage.setItem('auth_timestamp', authTimestamp);
+            
+            // Сохраняем ID пользователя для быстрой проверки
+            localStorage.setItem('current_user_id', user.id.toString());
+            
+            // Сохраняем метод авторизации
+            localStorage.setItem('auth_method', 'telegram_widget');
+            
+            // Сохраняем статус верификации
+            localStorage.setItem('user_verified', 'true');
+            
+            console.log('✅ Данные пользователя сохранены:', {
+                id: user.id,
+                name: user.first_name,
+                timestamp: authTimestamp
+            });
         } catch (error) {
-            console.error('Failed to store user:', error);
+            console.error('❌ Ошибка при сохранении пользователя:', error);
+            throw error;
         }
     }
 
@@ -1910,17 +2021,44 @@ class CabrioRideApp {
 
     clearStoredUser() {
         try {
-            // Очищаем все данные авторизации
-            localStorage.removeItem('cabrioride_user');
-            localStorage.removeItem('telegram_user');
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_method');
-            localStorage.removeItem('user_verified');
-            localStorage.removeItem('auth_fallback');
-            localStorage.removeItem('auth_timestamp');
-            console.log('All user data cleared');
+            console.log('🧹 Начинаем очистку данных пользователя...');
+            
+            // Список всех ключей для очистки
+            const keysToRemove = [
+                'cabrioride_user',
+                'telegram_user',
+                'auth_token',
+                'auth_method',
+                'user_verified',
+                'auth_fallback',
+                'auth_timestamp',
+                'telegram_auth_data',
+                'user_session',
+                'app_state'
+            ];
+            
+            // Очищаем каждый ключ
+            keysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    console.log(`🗑️ Удален ключ: ${key}`);
+                }
+            });
+            
+            // Очищаем sessionStorage
+            sessionStorage.clear();
+            console.log('🗑️ SessionStorage очищен');
+            
+            // Очищаем все куки, связанные с приложением
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            console.log('🍪 Куки очищены');
+            
+            console.log('✅ Очистка данных пользователя завершена');
         } catch (error) {
-            console.error('Failed to clear stored user:', error);
+            console.error('❌ Ошибка при очистке данных пользователя:', error);
+            throw error;
         }
     }
 
@@ -1995,26 +2133,55 @@ class CabrioRideApp {
             app.classList.add('hidden');
             loginScreen.classList.remove('hidden');
             
+            // Удаляем предыдущие сообщения об ошибках
+            const existingAccessDenied = loginScreen.querySelector('.access-denied-message');
+            if (existingAccessDenied) {
+                existingAccessDenied.remove();
+            }
+            
             // Показываем сообщение об отказе
             const errorDiv = document.createElement('div');
             errorDiv.className = 'access-denied-message';
+            
+            // Определяем тип сообщения в зависимости от статуса
+            let icon = '🚫';
+            let title = 'Доступ запрещен';
+            let helpText = '';
+            
+            if (status === 'не зарегистрирован') {
+                icon = '📝';
+                title = 'Регистрация не завершена';
+                helpText = 'Обратитесь к администратору клуба для завершения регистрации.';
+            } else if (status === 'участник') {
+                icon = '⏳';
+                title = 'Ожидание активации';
+                helpText = 'Ваш статус: "Участник". Для получения полного доступа необходимо стать активным участником клуба.';
+            } else if (status === 'новый') {
+                icon = '🆕';
+                title = 'Новый участник';
+                helpText = 'Ваш статус: "Новый участник". Для получения доступа необходимо пройти процедуру активации.';
+            } else if (status === 'вышел') {
+                icon = '👋';
+                title = 'Вы вышли из клуба';
+                helpText = 'Ваш статус: "Вышел из клуба". Доступ к контенту заблокирован.';
+            } else if (status === 'заблокирован') {
+                icon = '🔒';
+                title = 'Аккаунт заблокирован';
+                helpText = 'Ваш статус: "Заблокирован". Обратитесь к администратору клуба.';
+            }
+            
             errorDiv.innerHTML = `
                 <div class="access-denied-content">
-                    <div class="access-denied-icon">🚫</div>
-                    <h3>Доступ запрещен</h3>
+                    <div class="access-denied-icon">${icon}</div>
+                    <h3>${title}</h3>
                     <p><strong>Ваш статус:</strong> ${status}</p>
                     <p>${message}</p>
+                    ${helpText ? `<p class="help-text">${helpText}</p>` : ''}
                     <div class="access-denied-actions">
                         <button onclick="app.showLogin()" class="retry-btn">Попробовать снова</button>
                     </div>
                 </div>
             `;
-            
-            // Удаляем предыдущие сообщения об ошибках
-            const existingError = loginScreen.querySelector('.access-denied-message');
-            if (existingError) {
-                existingError.remove();
-            }
             
             loginScreen.appendChild(errorDiv);
         }

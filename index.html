@@ -85,6 +85,7 @@
                 <script async src="https://telegram.org/js/telegram-widget.js?22" 
                         data-telegram-login="Cabrio_Ride_bot" 
                         data-size="large" 
+                        data-auth-url="https://club.cabrioride.by/backend/auth-callback.php"
                         data-onauth="onTelegramAuth(user)"
                         data-request-access="write">
                 </script>
@@ -116,7 +117,6 @@
                            style="text-transform: uppercase; font-size: 1.1rem; text-align: center; letter-spacing: 1px;">
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="app.closeModal('check-number-modal')">Отмена</button>
                     <button type="submit" class="btn-primary" id="btn-submit-check-number" disabled>Проверить</button>
                 </div>
                 <div id="check-number-result" class="check-result"></div>
