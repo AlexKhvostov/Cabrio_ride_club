@@ -1222,39 +1222,51 @@ function handleCheckCarNumberRequest() {
             return;
         }
         
-        // Поиск среди машин участников клуба
-        $stmt = $pdo->prepare('
-            SELECT 
-                c.reg_number,
-                m.status as member_status
-            FROM cars c
-            JOIN members m ON c.member_id = m.id
-            WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
-              AND m.status IN ("активный", "участник", "новый")
-            LIMIT 1
-        ');
-        $stmt->execute(['%' . $regNumber . '%']);
-        $memberCar = $stmt->fetch();
-        
-        if ($memberCar) {
-            logApiCall('check_car_number', null, "Found member car: " . $memberCar['reg_number']);
+        // Поиск среди машин участников клуба (с проверкой существования таблиц)
+        $memberCar = null;
+        try {
+            $stmt = $pdo->prepare('
+                SELECT 
+                    c.reg_number,
+                    m.status as member_status
+                FROM cars c
+                JOIN members m ON c.member_id = m.id
+                WHERE REPLACE(UPPER(c.reg_number), " ", "") LIKE UPPER(?)
+                  AND m.status IN ("активный", "участник", "новый")
+                LIMIT 1
+            ');
+            $stmt->execute(['%' . $regNumber . '%']);
+            $memberCar = $stmt->fetch();
+            
+            if ($memberCar) {
+                logApiCall('check_car_number', null, "Found member car: " . $memberCar['reg_number']);
+            }
+        } catch (PDOException $e) {
+            logApiCall('check_car_number', null, "Cars table error: " . $e->getMessage());
+            // Продолжаем выполнение без машин
         }
         
-        // Поиск среди приглашений
-        $stmt = $pdo->prepare('
-            SELECT 
-                i.car_number,
-                i.status as invitation_status
-            FROM invitations i
-            WHERE REPLACE(UPPER(i.car_number), " ", "") LIKE UPPER(?)
-              AND i.status IN ("новое", "на связи", "встреча назначена", "вступил в клуб")
-            LIMIT 1
-        ');
-        $stmt->execute(['%' . $regNumber . '%']);
-        $invitation = $stmt->fetch();
-        
-        if ($invitation) {
-            logApiCall('check_car_number', null, "Found invitation: " . $invitation['car_number']);
+        // Поиск среди приглашений (с проверкой существования таблицы)
+        $invitation = null;
+        try {
+            $stmt = $pdo->prepare('
+                SELECT 
+                    i.car_number,
+                    i.status as invitation_status
+                FROM invitations i
+                WHERE REPLACE(UPPER(i.car_number), " ", "") LIKE UPPER(?)
+                  AND i.status IN ("новое", "на связи", "встреча назначена", "вступил в клуб")
+                LIMIT 1
+            ');
+            $stmt->execute(['%' . $regNumber . '%']);
+            $invitation = $stmt->fetch();
+            
+            if ($invitation) {
+                logApiCall('check_car_number', null, "Found invitation: " . $invitation['car_number']);
+            }
+        } catch (PDOException $e) {
+            logApiCall('check_car_number', null, "Invitations table error: " . $e->getMessage());
+            // Продолжаем выполнение без приглашений
         }
         
         $result = [

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест подключения к БД - CabrioRide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #555;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .info { color: #74c0fc; }
+    </style>
+</head>
+<body>
+    <h1>🗄️ Тест подключения к БД</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Тест API endpoints</h2>
+        <button class="test-button" onclick="testStats()">📊 Статистика</button>
+        <button class="test-button" onclick="testMembers()">👥 Участники</button>
+        <button class="test-button" onclick="testCars()">🚗 Автомобили</button>
+        <button class="test-button" onclick="testInvitations()">📨 Приглашения</button>
+        <button class="test-button" onclick="testSearch()">🔍 Поиск номера</button>
+        <button class="test-button" onclick="clearLog()">🧹 Очистить</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Результат</h2>
+        <div id="result" class="result">
+            <p>Результат появится здесь...</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Подробный лог</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function testAPI(action, data = null) {
+            log(`🔍 Тестируем API: ${action}`);
+            
+            try {
+                const url = `backend/api.php?action=${action}`;
+                const options = {
+                    method: data ? 'POST' : 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                log(`📡 Отправляем запрос: ${url}`);
+                log(`📋 Данные: ${JSON.stringify(data || 'GET запрос')}`);
+                
+                const response = await fetch(url, options);
+                log(`📡 HTTP статус: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const responseText = await response.text();
+                log(`📋 Сырой ответ: ${responseText}`);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    log(`✅ JSON успешно распарсен`);
+                } catch (parseError) {
+                    log(`❌ Ошибка парсинга JSON: ${parseError.message}`, 'error');
+                    updateResult({ error: 'JSON parse error', text: responseText });
+                    return;
+                }
+                
+                if (result.success) {
+                    log(`✅ API успех: ${action}`, 'success');
+                    updateResult(result);
+                } else {
+                    log(`❌ Ошибка API: ${result.error}`, 'error');
+                    updateResult(result);
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка запроса: ${error.message}`, 'error');
+                updateResult({ error: error.message });
+            }
+        }
+
+        async function testStats() {
+            await testAPI('stats');
+        }
+
+        async function testMembers() {
+            await testAPI('members');
+        }
+
+        async function testCars() {
+            await testAPI('cars');
+        }
+
+        async function testInvitations() {
+            await testAPI('invitations');
+        }
+
+        async function testSearch() {
+            await testAPI('check_car_number', { reg_number: '70MX' });
+        }
+
+        // Автоматический тест при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Тест подключения к БД готов к работе');
+            log('💡 Нажмите кнопки для тестирования разных API endpoints');
+            log('🔍 Начните с "Статистика" для проверки базового подключения');
+        });
+    </script>
+</body>
+</html> 
