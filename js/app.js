@@ -57,8 +57,8 @@ class CabrioRideApp {
                     photo_url: null
                 };
                 
-                // Инициализируем API
-                this.api = window.realAPI || window.mockAPI;
+                // Инициализируем API - всегда используем realAPI
+                this.api = window.realAPI;
                 
                 // Загружаем данные
                 console.log('🔧 Тестовый режим: загружаем данные...');
@@ -71,8 +71,8 @@ class CabrioRideApp {
                 return;
             }
             
-            // Инициализируем API
-            this.api = window.realAPI || window.mockAPI;
+            // Инициализируем API - всегда используем realAPI
+            this.api = window.realAPI;
             
             // Проверяем флаг принудительной авторизации через Telegram
             const forceTelegramAuth = localStorage.getItem('force_telegram_auth');

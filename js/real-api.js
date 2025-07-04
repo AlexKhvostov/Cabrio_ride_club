@@ -198,7 +198,7 @@ class RealAPI {
 // Создаем экземпляр реального API
 window.realAPI = new RealAPI();
 
-// Заменяем mockAPI на realAPI для использования в app.js
-window.mockAPI = window.realAPI;
+// НЕ заменяем mockAPI на realAPI, чтобы избежать конфликтов
+// window.mockAPI = window.realAPI;
 
 console.log('🔄 Real API initialized - теперь используется реальная база данных!'); 
